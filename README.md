@@ -1,15 +1,8 @@
-# Your startup name here
+# Free Bracket Builder
 
 [My Notes](notes.md)
 
-A brief description of the application here. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-
-> [!NOTE]
->  This is a template for your startup application. You must modify this `README.md` file for each phase of your development. You only need to fill in the section for each deliverable when that deliverable is submitted in Canvas. Without completing the section for a deliverable, the TA will not know what to look for when grading your submission. Feel free to add additional information to each deliverable description, but make sure you at least have the list of rubric items and a description of what you did for each item.
-
-> [!NOTE]
->  If you are not familiar with Markdown then you should review the [documentation](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax) before continuing.
+The following application will be a versatile version of a bracket builder. The appeal is to make it free and easy to use as well as adaptable to user needs. Features will include custom themes, access to multiple tourney options (single and double elimination, seeded versus random matchups), and user permissions to specify who can view versus edit in real time. The application will allow the user to manage time with additional inputs: this will allow the user to account for the time it takes to play in a match and how many matches can be played at once. The final product will adapt to both browser and phone templates for viewing.   
 
 ## 🚀 Specification Deliverable
 
@@ -18,45 +11,53 @@ A brief description of the application here. Lorem ipsum dolor sit amet, consect
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] Proper use of Markdown
-- [ ] A concise and compelling elevator pitch
+- [x] Proper use of Markdown
+- [x] A concise and compelling elevator pitch
 - [ ] Description of key features
 - [ ] Description of how you will use each technology
 - [ ] One or more rough sketches of your application. Images must be embedded in this file using Markdown image references.
 
 ### Elevator pitch
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Free Bracket Builder will be an easy-to-use and quick version of a bracket builder, which will automatically slot participants in a tournament of the user's specifications. Unlike existing applications, this one will be free to use, contain custom themes, and grant unlimited access to typical specifications when creating a tourney (single and double elimination, seeded versus random matchups). The application will boast time management utilities for the user that other apps fail to include, which will account for both the time it takes to play a match as well as how many matches can be played at once. The final product will adapt to both browser and phone templates to be flexible for readers.   
 
 ### Design
 
-![Design image](placeholder.png)
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+![Design image 1](img/wb1.png)
+![Design image 2](img/wb2.png)
 
 ```mermaid
 sequenceDiagram
-    actor You
-    actor Website
-    You->>Website: Replace this with your design
+    actor Owner
+    actor Editors
+    actor Viewers
+    Owner->>Server: Creates and edits bracket, shares it with specified users
+    Server-->Editors: Receives bracket
+    Server-->Viewer: Receives bracket
+    Editors->>Server: Edits bracket
+    Server-->Owner: Receives new bracket
+    Server-->Viewer: Receives new bracket
 ```
 
 ### Key features
 
-- Describe your key feature
-- Describe your key feature
-- Describe your key feature
+- Secure login over HTTPS
+- Determine bracket framework, including title, type, team number, seeds, and other essential elements
+- Optional choices for themes, time management components (optional depending on time and resources), and sharing options
+- Easy editing for each match for time and location of match
+- Sharing options expanded to include co-editors and viewers
+- Bracket edits are persistently saved and stored in DB
 
 ### Technologies
 
 I am going to use the required technologies in the following ways.
 
-- **HTML** - Description here
-- **CSS** - Description here
-- **React** - Description here
-- **Service** - Description here
-- **DB/Login** - Description here
-- **WebSocket** - Description here
+- **HTML** - Uses HTML structure for application. Four HTML pages: one for login, one for bracket creation, one for bracket structure, and the last containing all brackets the user is shared to.
+- **CSS** - Styling for easy usage of bracket creation, choice colors and contrasts used for theme selection. 
+- **React** - Login details, interaction with building, editing, and updating the bracket.  
+- **Service** - Endpoints for login credentials, send sharing permissions, submitting and retrieving bracket formats and information, API call for theme palettes
+- **DB/Login** - Store users, choices, and bracket info in database. Register and login users. Credentials securely stored in database. Can't edit brackets unless authenticated. 
+- **WebSocket** - As brackets are created and shared, specified users are granted access. If brackets are made public, then no credentials are needed. 
 
 ## 🚀 AWS deliverable
 
