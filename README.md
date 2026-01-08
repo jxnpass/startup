@@ -33,10 +33,10 @@ sequenceDiagram
     actor Viewers
     Owner->>Server: Creates and edits bracket, shares it with specified users
     Server-->Editors: Receives bracket
-    Server-->Viewer: Receives bracket
+    Server-->Viewers: Receives bracket
     Editors->>Server: Edits bracket
     Server-->Owner: Receives new bracket
-    Server-->Viewer: Receives new bracket
+    Server-->Viewers: Receives new bracket
 ```
 
 ### Key features
