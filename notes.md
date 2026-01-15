@@ -10,12 +10,27 @@
 
 ## AWS
 
-<!--  My IP address is: 54.81.96.130 -->
+<!--  My IP address is: 34.231.90.41 -->
 Launching my AMI I initially put it on a private subnet. Even though it had a public IP address and the security group was right, I wasn't able to connect to it.
+
+I can access the server files using  
+```
+ssh -i ~/pathtokey.pem ubuntu@bracketbuilder.click
+```
+
+Starting a AWS instance requires I do the following:
+1. set up an instance 
+2. create an elastic IP
+3. set up a domain name / DNS
+4. connect the domain name to the public IP address
+
+These use the AWS apps EC2 and Route53
 
 ## Caddy
 
 No problems worked just like it said in the [instruction](https://github.com/webprogramming260/.github/blob/main/profile/webServers/https/https.md).
+
+Software allows for free private encryption. Should use Caddy in the future. 
 
 ## HTML
 
