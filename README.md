@@ -69,15 +69,15 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **HTML pages** - I did not complete this part of the deliverable.
-- [ ] **Proper HTML element usage** - I did not complete this part of the deliverable.
-- [ ] **Links** - I did not complete this part of the deliverable.
-- [ ] **Text** - I did not complete this part of the deliverable.
-- [ ] **3rd party API placeholder** - I did not complete this part of the deliverable.
-- [ ] **Images** - I did not complete this part of the deliverable.
-- [ ] **Login placeholder** - I did not complete this part of the deliverable.
-- [ ] **DB data placeholder** - I did not complete this part of the deliverable.
-- [ ] **WebSocket placeholder** - I did not complete this part of the deliverable.
+- [x] **HTML pages** - Made about five
+- [x] **Proper HTML element usage** - See GitHub
+- [x] **Links** - Main Nav very clear
+- [x] **Text** - See About page
+- [x] **3rd party API placeholder** - See Create page
+- [x] **Images** - See About page
+- [x] **Login placeholder** - On main page / index
+- [x] **DB data placeholder** - Idea is implied on bracket example
+- [x] **WebSocket placeholder** - Idea is implied on bracket example
 
 ## 🚀 CSS deliverable
 

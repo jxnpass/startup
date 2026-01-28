@@ -34,9 +34,12 @@ Software allows for free private encryption. Should use Caddy in the future.
 
 ## HTML
 
-This was easy. I was careful to use the correct structural elements such as header, footer, main, nav, and form. The links between the three views work great using the `a` element.
+This was easy. I was careful to use the correct structural elements such as header, footer, main, nav, and form. The links between the various views work great using the `a` element. 
 
-The part I didn't like was the duplication of the header and footer code. This is messy, but it will get cleaned up when I get to React.
+The "Create a Bracket Page" had the major parts of the HTML structure. Here I used a lot of those user options/interactive elements. These will create variables that build the bracket.
+
+The list of brackets page and the bracket itself will require some extensive JavaScript code. Something that may be a struggle later. 
+
 
 ## CSS
 
