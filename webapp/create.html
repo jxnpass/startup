@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <!-- Tell browsers not to scale the viewport automatically -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simon</title>
+    <title>Bracket Builder Free</title>
     <link rel="icon" href="favicon.ico" />
   </head>
   <body>
     <!-- Use header, main, and footer elements to give semantic structure -->
     <header>
-      <h1>Simon<sup>&reg;</sup></h1>
+      <h1>Bracket Builder Free<sup>&reg;</sup></h1>
 
       <!-- Navigation elements -->
       <nav>
@@ -28,77 +28,112 @@
     </header>
 
     <main>
-      <div class="players">
-        Player:
-        <span class="player-name">Mystery player</span>
-      </div>
-      <ul class="notification">
-        <li class="player-name">Tim started a new game</li>
-        <li class="player-name">Ada started a new game</li>
-        <li class="player-name">Tim scored 337</li>
-      </ul>
+      <body>
+        <h1>Create a Bracket</h1>
+        <form action="bracket.html" method="post">
+          <ul>
+            <h4>Bracket Information</h4>
+            <li>
+              <label for="text">Name of Bracket: </label>
+              <input type="text" id="text" name="varName" placeholder="Name" required pattern="[Aa].*" />
+            </li>
+            <li>
+              <label for="textarea">Description: </label>
+              <textarea id="textarea" name="varDescription"></textarea>
+            </li>
+            <li>
+              <label for="BracketType">Bracket Type:</label>
+              <fieldset>
+                <label for="Single Elimination">Single Elimination</label>
+                <input type="radio" id="Single Elimination" name="varRadio" value="Single Elimination" checked />
+                <label for="Double Elimination">Double Elimination</label>
+                <input type="radio" id="Double Elimination" name="varRadio" value="Double Elimination" />
+                <label for="Round Robin">Round Robin</label>
+                <input type="radio" id="Round Robin" name="varRadio" value="Round Robin" />
+              </fieldset>
+            </li>
+            <li>
+              <label for="number">Number of Teams: </label>
+              <input type="number" name="varTeamCount" id="number" min="2" max="16" step="1" />
+            </li>
+            <li>
+              <label for="teamNames">Team Names: </label>
+              <div id="teamNamesContainer"></div>
+            </li>
+            <script>
+              const teamCountInput = document.querySelector('#number');
+              const container = document.querySelector('#teamNamesContainer');
+              
+              function updateTeamInputs() {
+                const count = parseInt(teamCountInput.value) || 0;
+                container.innerHTML = '';
+                for (let i = 1; i <= count; i++) {
+                  const input = document.createElement('input');
+                  input.type = 'text';
+                  input.name = `varTeam${i}`;
+                  input.placeholder = `Team ${i}`;
+                  container.appendChild(input);
+                }
+              }
+              
+              teamCountInput.addEventListener('change', updateTeamInputs);
+              teamCountInput.addEventListener('input', updateTeamInputs);
+            </script>
+            <li>
+              <label for="checkbox">Seeding:</label>
+              <input type="checkbox" id="checkbox" name="varSeeds" value="Seeded" checked />
+            </li>
+            <h4>Additional Options</h4>
+            <li>
+              <label for="Color Theme">Select a Color Theme: </label>
+              <select id="select" name="varColorTheme">
+                <option selected>Default</option>
+                <option>Theme1</option>
+                <option>Theme2</option>
+                <option>Other Options (API CALL)</option>
+              </select>
+            </li>
+            <li>
+              <label for="Datetime Start">Start Date/Time:</label>
+              <input type="datetime-local" id="Datetime Start" name="varDatetimeStart" />
+            </li>
+            <li>
+              <label for="TimePerMatch">Time Per Match (minutes): </label>
+              <input type="number" id="TimePerMatch" name="varTimePerMatch" />
+            </li>
+            <li>
+              <label for="GamesPerTimepoint">Number of Games Played at Same Time: </label>
+              <input type="number" id="GamesPerTimepoint" name="varGamesPerTimepoint" />
+            </li>
+            <h4>Sharing</h4>
+            <li>
+              <label for="Viewing">Viewing:</label>
+              <select id="select" name="varViewing">
+                <option selected>Private</option>
+                <option>Public</option>
+              </select>
+            </li>
+            <li>
+              <label for="Editors">Editors:</label>
+              <select id="select" name="varEditors">
+                <option selected>None</option>
+                <option>Priviate</option>
+                <option>Public</option>
+              </select>
+            </li>
 
-      <!-- More formatting with old style HTML -->
-      <br />
 
-      <div>
-        <label for="count">Score</label>
-        <input type="text" id="count" value="--" readonly />
-      </div>
-
-      <br />
-
-      <div>
-        <button>Reset</button>
-      </div>
-
-      <br />
-
-      <div>
-        <table>
-          <tr>
-            <td>
-              <button>
-                <svg aria-hidden="true" viewBox="0 0 100 100" height="100" width="100">
-                  <!-- SVG
-                    M move <to x,y>
-                    Q quadratic curve <control point x,y> <to x,y>
-                -->
-                  <path d="M 95,5 95,95 5,95 Q 5,5 95,5" fill="green" />
-                </svg>
-              </button>
-            </td>
-            <td>
-              <button>
-                <svg aria-hidden="true" viewBox="0 0 100 100" height="100" width="100">
-                  <path d="M5,5 5,95 95,95 Q 95,5 5,5" fill="red" />
-                </svg>
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <button>
-                <svg aria-hidden="true" viewBox="0 0 100 100" height="100" width="100">
-                  <path d="M5,5 95,5 95,95 Q 5,95 5,5" fill="blue" />
-                </svg>
-              </button>
-            </td>
-            <td>
-              <button>
-                <svg aria-hidden="true" viewBox="0 0 100 100" height="100" width="100">
-                  <path d="M95,5 5,5 5,95 Q 95,95 95,5" fill="yellow" />
-                </svg>
-              </button>
-            </td>
-          </tr>
-        </table>
-      </div>
+          <button type="submit">Create</button>
+        </form>
+      </body>
     </main>
 
     <footer>
       <hr />
-      <span class="text-reset">Jackson Passey</span>
+      <span class="text-reset">Username: User </span>
+      <br />
+      <hr />
+      <span class="text-reset">Author: Jackson Passey</span>
       <br />
       <a href="https://github.com/jxnpass/startup">GitHub</a>
     </footer>
