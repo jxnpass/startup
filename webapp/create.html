@@ -35,7 +35,7 @@
             <h4>Bracket Information</h4>
             <li>
               <label for="text">Name of Bracket: </label>
-              <input type="text" id="text" name="varName" placeholder="Name" required pattern="[Aa].*" />
+              <input type="text" id="text" name="varName" placeholder="Name" />
             </li>
             <li>
               <label for="textarea">Description: </label>
@@ -54,7 +54,7 @@
             </li>
             <li>
               <label for="number">Number of Teams: </label>
-              <input type="number" name="varTeamCount" id="number" min="2" max="16" step="1" />
+              <input type="number" name="varTeamCount" id="number" min="2" max="16" step="1" value="2" />
             </li>
             <li>
               <label for="teamNames">Team Names: </label>
@@ -119,6 +119,11 @@
                 <option selected>None</option>
                 <option>Priviate</option>
                 <option>Public</option>
+              </select>
+            </li>
+            <li>
+              <label for="Editor Emails">Editor Emails:</label>
+              <select id="text" name="varEditorEmails">
               </select>
             </li>
 
