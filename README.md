@@ -69,15 +69,15 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [x] **HTML pages** - Made about five
-- [x] **Proper HTML element usage** - See GitHub
-- [x] **Links** - Main Nav very clear
-- [x] **Text** - See About page
-- [x] **3rd party API placeholder** - See Create page
+- [x] **HTML pages** - Made about five including index page, bracket creation, listing of existing brackets, about page, etc.
+- [x] **Proper HTML element usage** - Used head, body, nav, footer, etc. See GitHub for details
+- [x] **Links** - Table of contents heading for each page
+- [x] **Text** - About page has paragraphs and images
+- [x] **3rd party API placeholder** - Create page will allow you to call third party color palletes in future
 - [x] **Images** - See About page
-- [x] **Login placeholder** - On main page / index
-- [x] **DB data placeholder** - Idea is implied on bracket example
-- [x] **WebSocket placeholder** - Idea is implied on bracket example
+- [x] **Login placeholder** - First page / index should have you log in
+- [x] **DB data placeholder** - Bracket data stored for users
+- [x] **WebSocket placeholder** - Bracket pages themselves will allow for live scoring and display
 
 ## 🚀 CSS deliverable
 
