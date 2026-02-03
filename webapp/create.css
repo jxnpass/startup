@@ -2,11 +2,11 @@
    Main Content Overrides
    ====================== */
 main {
+  background-color: #F8F8FF;
   width: 100%;
-  max-width: 900px;
   margin: 0 auto;
   text-align: left;
-  padding: 2rem;
+  padding: 3rem;
 }
 
 /* ======================
@@ -148,7 +148,6 @@ fieldset input[type="radio"] {
 .button-group input:checked + label {
   background-color: #4169E1;
   color: #F8F8FF;
-  font-weight: 600;
 }
 
 /* Hover effect */

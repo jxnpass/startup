@@ -27,8 +27,12 @@ body {
 }
 
 /* Header and footer stay visible */
-header,
-footer {
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* puts username on right */
+  position: sticky; /* or fixed if you want it always visible */
+  top: 0;
   background-color: #2a2a94;
   color: #F8F8FF;
   padding: 1rem 2rem;
@@ -164,8 +168,12 @@ button:active {
    Footer
    ====================== */
 footer {
+  flex-shrink: 0;
   text-align: center;
   font-size: 0.9rem;
+  background-color: #2a2a94;
+  color: #F8F8FF;
+  padding: 1rem 2rem;
 }
 
 footer a {
