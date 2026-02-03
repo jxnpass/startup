@@ -7,6 +7,7 @@
   height: auto;
   overflow-x: auto;
   overflow-y: visible;
+  position: relative;
 }
 
 .bracket {
@@ -39,6 +40,19 @@
 
 .bracket-description {
   color: #4169E1;
+}
+
+#bracket-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.bracket-wrapper {
+  position: relative;
 }
 
 
