@@ -1,0 +1,136 @@
+/* ======================
+   Bracket Page Wrapper
+   ====================== */
+.bracket-page {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+
+  /* Break out of main.css centering */
+  display: block;
+}
+
+/* ======================
+   Header Text
+   ====================== */
+.bracket-header {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 2rem auto;
+  text-align: center;
+}
+
+.bracket-title {
+  color: #000080;
+  margin-bottom: 0.5rem;
+}
+
+.bracket-description {
+  color: #4169E1;
+}
+
+/* ======================
+   Bracket Container
+   ====================== */
+.bracket {
+  display: flex;
+  align-items: flex-start;   
+  gap: 1rem;
+
+  /* allow large height */
+  padding-bottom: 4rem;
+  min-width: max-content;
+}
+
+/* ======================
+   Rounds
+   ====================== */
+.round {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 240px;
+}
+
+.round h2 {
+  text-align: center;
+  color: #4169E1;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* ======================
+   Matches
+   ====================== */
+.match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  position: relative;
+}
+
+/* ======================
+   Pairs
+   ====================== */
+
+.pair {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+
+/* ======================
+   Teams
+   ====================== */
+.team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background-color: #F8F8FF;
+  border: 1px solid #4169E1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+
+  font-size: 0.9rem;
+  min-width: 220px;
+}
+
+/* ======================
+   Inputs
+   ====================== */
+.team input {
+  width: 2.2rem;
+  border: none;
+  border-left: 1px solid #4169E1;
+  padding-left: 0.4rem;
+  text-align: center;
+  background: transparent;
+  outline: none;
+}
+
+/* ======================
+   Final / Champion
+   ====================== */
+.final .team {
+  font-weight: 600;
+  background-color: #4169E1;
+  color: #F8F8FF;
+}
+
+.final input {
+  color: #F8F8FF;
+  border-left: 1px solid #F8F8FF;
+}
+
+/* ======================
+   Responsive
+   ====================== */
+@media (max-width: 900px) {
+  .bracket {
+    align-items: flex-start;
+  }
+}

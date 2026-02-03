@@ -6,6 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>*Bracket Name*</title>
     <link rel="icon" href="favicon.ico" />
+
+    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet" href="bracket.css" />
+
+    <!-- Include bootstrap CSS framework -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi"
+      crossorigin="anonymous"
+    />
+
   </head>
   <body>
     <!-- Use header, main, and footer elements to give semantic structure -->
@@ -17,128 +29,158 @@
         <menu>
           <li><a href="index.html">Home</a></li>
           <li><a href="create.html">Create a Bracket</a></li>
-          <li><a href="list.html">See Existing Brackets</a></li>
+          <li><a href="list.html" class="active">See Existing Brackets</a></li>
           <li><a href="about.html">About</a></li>
         </menu>
       </nav>
 
-      <!-- Since we don't have the ability to style we use old style HTML to give some visual formatting -->
-      <hr />
+      <span class="header-user">Username: User</span>
+      
     </header>
 
-    <h1>*Bracket Name*</h1>
-    <p> Author Note: this is purely static right now. When applying CSS and JavaScript this should be more dynamic. </p>
-    <p> DB and WebSocket should allow for stored results, live editing, and viewing results across users. </p>
+<main class="bracket-page">
+  <div class="bracket-header">
+    <h1 class="bracket-title">*Bracket Name*</h1>
+    <p class="bracket-description">
+      *Bracket Description* Author Note: this is purely static right now. When applying CSS and JavaScript
+      this should be more dynamic.
+    </p>
+  </div>
 
-    <table border="1" cellpadding="6" cellspacing="0">
-    <tr>
-        <th>Round of 16</th>
-        <th>Quarterfinals</th>
-        <th>Semifinals</th>
-        <th>Final</th>
-    </tr>
+  <div class="bracket">
 
-    <!-- Match 1 -->
-    <tr>
-        <td>
-        Team 1 <input type="text" size="2"> <br>
-        Team 16 <input type="text" size="2">
-        </td>
-        <td rowspan="2">
-        Winner M1 <input type="text" size="2"><br>
-        Winner M2 <input type="text" size="2">
-        </td>
-        <td rowspan="4">
-        Winner Q1 <input type="text" size="2"><br>
-        Winner Q2 <input type="text" size="2">
-        </td>
-        <td rowspan="8">
-        Champion <input type="text" size="2"><br>
-        Runner-up <input type="text" size="2">
-        </td>
-    </tr>
+    <!-- Round of 16 -->
+    <section class="round">
+      <h2>Round of 16</h2>
 
-    <!-- Match 2 -->
-    <tr>
-        <td>
-        Team 8 <input type="text" size="2"><br>
-        Team 9 <input type="text" size="2">
-        </td>
-    </tr>
+      <div class="pair">
+        <div class="match">
+          <div class="team">Team 1 <input /></div>
+          <div class="team">Team 16 <input /></div>
+        </div>
+        <div class="match">
+          <div class="team">Team 8 <input /></div>
+          <div class="team">Team 9 <input /></div>
+        </div>
+      </div>
 
-    <!-- Match 3 -->
-    <tr>
-        <td>
-        Team 4 <input type="text" size="2"><br>
-        Team 13 <input type="text" size="2">
-        </td>
-        <td rowspan="2">
-        Winner M3 <input type="text" size="2"><br>
-        Winner M4 <input type="text" size="2">
-        </td>
-    </tr>
+      <div class="pair">
+        <div class="match">
+          <div class="team">Team 4 <input /></div>
+          <div class="team">Team 13 <input /></div>
+        </div>
+        <div class="match">
+          <div class="team">Team 5 <input /></div>
+          <div class="team">Team 12 <input /></div>
+        </div>
+      </div>
 
-    <!-- Match 4 -->
-    <tr>
-        <td>
-        Team 5 <input type="text" size="2"><br>
-        Team 12 <input type="text" size="2">
-        </td>
-    </tr>
+      <div class="pair">
+        <div class="match">
+          <div class="team">Team 2 <input /></div>
+          <div class="team">Team 15 <input /></div>
+        </div>
+        <div class="match">
+          <div class="team">Team 7 <input /></div>
+          <div class="team">Team 10 <input /></div>
+        </div>
+      </div>
 
-    <!-- Match 5 -->
-    <tr>
-        <td>
-        Team 2 <input type="text" size="2"><br>
-        Team 15 <input type="text" size="2">
-        </td>
-        <td rowspan="2">
-        Winner M5 <input type="text" size="2"><br>
-        Winner M6 <input type="text" size="2">
-        </td>
-        <td rowspan="4">
-        Winner Q3 <input type="text" size="2"><br>
-        Winner Q4 <input type="text" size="2">
-        </td>
-    </tr>
+      <div class="pair">
+        <div class="match">
+          <div class="team">Team 3 <input /></div>
+          <div class="team">Team 14 <input /></div>
+        </div>
+        <div class="match">
+          <div class="team">Team 6 <input /></div>
+          <div class="team">Team 11 <input /></div>
+        </div>
+      </div>
 
-    <!-- Match 6 -->
-    <tr>
-        <td>
-        Team 7 <input type="text" size="2"><br>
-        Team 10 <input type="text" size="2">
-        </td>
-    </tr>
 
-    <!-- Match 7 -->
-    <tr>
-        <td>
-        Team 3 <input type="text" size="2"><br>
-        Team 14 <input type="text" size="2">
-        </td>
-        <td rowspan="2">
-        Winner M7 <input type="text" size="2"><br>
-        Winner M8 <input type="text" size="2">
-        </td>
-    </tr>
+    </section>
 
-    <!-- Match 8 -->
-    <tr>
-        <td>
-        Team 6 <input type="text" size="2"><br>
-        Team 11 <input type="text" size="2">
-        </td>
-    </tr>
+    <!-- Round of 8 -->
+    <section class="round">
+      <h2>Round of 8</h2>
 
-    </table>
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner 1 <input /></div>
+          <div class="team">Winner 2 <input /></div>
+        </div>
+      </div>
 
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner 3 <input /></div>
+          <div class="team">Winner 4 <input /></div>
+        </div>
+      </div>
+
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner 5 <input /></div>
+          <div class="team">Winner 6 <input /></div>
+        </div>
+      </div>
+
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner 7 <input /></div>
+          <div class="team">Winner 8 <input /></div>
+        </div>
+      </div>
+      
+    </section>
+
+    <!-- Semifinals -->
+    <section class="round">
+      <h2>Semifinals</h2>
+
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner A <input /></div>
+          <div class="team">Winner B <input /></div>
+        </div>
+      </div>
+
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner C <input /></div>
+          <div class="team">Winner D <input /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final -->
+
+    <section class="round">
+      <h2>Final</h2>
+
+      <div class="pair">
+        <div class="match">
+          <div class="team">Winner 1 <input /></div>
+          <div class="team">Winner 2 <input /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final Result-->
+    <section class="round final">
+      <h2>Final</h2>
+
+      <div class="match champion">
+        <div class="team">Champion <input /></div>
+        <div class="team">Runner-up <input /></div>
+      </div>
+    </section>
+
+  </div>
+</main>
 
 
     <footer>
-      <hr />
-      <span class="text-reset">Username: User </span>
-      <br />
-      <hr />
       <span class="text-reset">Author: Jackson Passey</span>
       <br />
       <a href="https://github.com/jxnpass/startup">GitHub</a>
