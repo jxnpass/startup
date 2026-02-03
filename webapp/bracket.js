@@ -66,6 +66,8 @@ function drawAllConnections() {
 
   connect(m13, m15);
   connect(m14, m15);
+
+  connect(m15, m16);
 }
 
 window.addEventListener("load", drawAllConnections);
