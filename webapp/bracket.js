@@ -46,28 +46,51 @@ function connect(a, b) {
 function drawAllConnections() {
   svg.innerHTML = "";
 
-  connect(m1, m9);
-  connect(m2, m9);
+  connect(t1, w1);
+  connect(t16, w1);
 
-  connect(m3, m10);
-  connect(m4, m10);
+  connect(t8, w2);
+  connect(t9, w2);
 
-  connect(m5, m11);
-  connect(m6, m11);
+  connect(t4, w3);
+  connect(t13, w3);
 
-  connect(m7, m12);
-  connect(m8, m12);
+  connect(t5, w4);
+  connect(t12, w4);
 
-  connect(m9, m13);
-  connect(m10, m13);
+  connect(t2, w5);
+  connect(t15, w5);
 
-  connect(m11, m14);
-  connect(m12, m14);
+  connect(t7, w6);
+  connect(t10, w6);
 
-  connect(m13, m15);
-  connect(m14, m15);
+  connect(t3, w7);
+  connect(t14, w7);
 
-  connect(m15, m16);
+  connect(t6, w8);
+  connect(t11, w8);
+
+  connect(w1, w9);
+  connect(w2, w9);
+
+  connect(w3, w10);
+  connect(w4, w10);
+
+  connect(w5, w11);
+  connect(w6, w11);
+
+  connect(w7, w12);
+  connect(w8, w12);
+
+  connect(w9, w13);
+  connect(w10, w13);
+
+  connect(w11, w14);
+  connect(w12, w14);
+
+  connect(w13, m16);
+  connect(w14, m16);
+  
 }
 
 window.addEventListener("load", drawAllConnections);
