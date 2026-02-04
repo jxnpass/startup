@@ -53,6 +53,7 @@
 
 .bracket-wrapper {
   position: relative;
+  width: max-content;
 }
 
 
@@ -64,6 +65,7 @@
   flex-direction: column;
   gap: 2.5rem;
   min-width: 240px;
+  justify-content: space-around;
 }
 
 .round h2 {
@@ -73,16 +75,13 @@
   margin-bottom: 1rem;
 }
 
-.round:nth-child(1) .pair { margin-bottom: 1.2rem; }
-.round:nth-child(2) .pair { margin-bottom: 2.8rem; }
-.round:nth-child(3) .pair { margin-bottom: 4.5rem; }
-.round:nth-child(4) .pair { margin-bottom: 6rem; }
-.round:nth-child(5) .pair { margin-bottom: 7.5rem; }
-
-.round:last-child .match::after,
-.round:last-child .pair-inner::after {
-  display: none;
+.round .pair {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
+
+
 
 
 /* ======================
@@ -93,6 +92,7 @@
   flex-direction: column;
   gap: 0.6rem;
   position: relative;
+  min-height: 56px;
 }
 
 /* ======================

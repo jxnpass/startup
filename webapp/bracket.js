@@ -1,5 +1,15 @@
 const svg = document.getElementById("bracket-lines");
 
+function resizeSVG() {
+  const rect = document
+    .querySelector(".bracket")
+    .getBoundingClientRect();
+
+  svg.setAttribute("width", rect.width);
+  svg.setAttribute("height", rect.height);
+}
+
+
 function svgPoint(x, y) {
   const pt = svg.createSVGPoint();
   pt.x = x;
@@ -44,6 +54,7 @@ function connect(a, b) {
 }
 
 function drawAllConnections() {
+  resizeSVG();
   svg.innerHTML = "";
 
   connect(t1, w1);
@@ -95,4 +106,3 @@ function drawAllConnections() {
 
 window.addEventListener("load", drawAllConnections);
 window.addEventListener("resize", drawAllConnections);
-window.addEventListener("scroll", drawAllConnections);
