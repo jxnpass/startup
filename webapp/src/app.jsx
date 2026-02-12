@@ -22,7 +22,7 @@ export default function App() {
             <menu className="navbar-nav">
                 <li className="nav-item">
                 <NavLink className="nav-link" to="/">
-                    Home
+                    Login
                 </NavLink>
                 </li>
                 <li className="nav-item">
@@ -44,6 +44,15 @@ export default function App() {
             </nav>
         </header>
 
+        <Routes>
+        <Route path='/' element={<Login />} exact />
+        <Route path='/create' element={<Create />} />
+        <Route path='/list' element={<List />} />
+        <Route path='/about' element={<About />} />
+        <Route path='*' element={<NotFound />} />
+        </Routes>
+
+
         <footer className="bg-dark text-white-50">
             <div className="container-fluid">
             <span className="text-reset">Jackson Passey</span>
@@ -57,3 +66,6 @@ export default function App() {
   );
 }
 
+function NotFound() {
+  return <main className="container-fluid bg-secondary text-center">404: Return to sender. Address unknown.</main>;
+}
