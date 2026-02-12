@@ -1,0 +1,108 @@
+.page-bracket {
+  max-width: 100%;
+}
+
+.bracket-page {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  position: relative;
+}
+
+.bracket-wrapper {
+  position: relative;
+  width: max-content;
+}
+
+.bracket-header {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 2rem auto;
+  text-align: center;
+}
+
+.bracket-title {
+  color: #000080;
+  margin-bottom: 0.5rem;
+}
+
+.bracket-description {
+  color: #4169E1;
+}
+
+.bracket {
+  display: flex;
+  align-items: flex-start;
+  gap: 3.5rem;
+  padding: 2rem 3rem 4rem;
+  min-width: max-content;
+}
+
+#bracket-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Rounds */
+.round {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 240px;
+  justify-content: space-around;
+}
+
+.round h2 {
+  text-align: center;
+  color: #4169E1;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* Matches */
+.match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  position: relative;
+  min-height: 56px;
+}
+
+.pair-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Teams */
+.team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background-color: #F8F8FF;
+  border: 1px solid #4169E1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+
+  font-size: 0.9rem;
+  min-width: 220px;
+}
+
+.team input {
+  width: 2.2rem;
+  border: none;
+  border-left: 1px solid #4169E1;
+  padding-left: 0.4rem;
+  text-align: center;
+  background: transparent;
+  outline: none;
+}
+
+@media (max-width: 900px) {
+  .bracket {
+    align-items: flex-start;
+  }
+}

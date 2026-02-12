@@ -1,0 +1,71 @@
+.page-list {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.page-list > h1 {
+  color: #2a2a94;
+  margin-bottom: 1.5rem;
+}
+
+.page-list table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.page-list thead {
+  background-color: #2a2a94;
+  color: #F8F8FF;
+}
+
+.page-list th {
+  padding: 0.75rem 0.8rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+
+.page-list td {
+  padding: 0.7rem 0.8rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.page-list tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.15s ease;
+}
+
+.page-list tbody tr:hover {
+  background-color: #F1F4FF;
+}
+
+.page-list td a {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  color: #2a2a94;
+  border: 1px solid #2a2a94;
+}
+
+.page-list td a:hover {
+  background-color: #2a2a94;
+  color: #ffffff;
+}
+
+@media (max-width: 800px) {
+  .page-list th,
+  .page-list td {
+    padding: 0.5rem;
+  }
+}

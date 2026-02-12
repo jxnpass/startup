@@ -1,10 +1,12 @@
 import React from 'react';
-import './list.css';
+import { Link } from 'react-router-dom';
+import '../styles/list.css';
 
-export function List() {
+export default function List() {
   return (
-    <main>
+    <div className="page page-list">
       <h1>My Brackets</h1>
+
       <table>
         <thead>
           <tr>
@@ -21,27 +23,39 @@ export function List() {
         <tbody>
           <tr>
             <td>2</td>
-            <td>Jackson's Tournament</td>
+            <td>Jackson&apos;s Tournament</td>
             <td>16</td>
             <td>Single Elimination * Seeded</td>
             <td>Jan 27, 2026</td>
-            <td><a href="bracket.html">View</a></td>
-            <td><a href="bracket.html">Edit</a></td>
-            <td><a href="bracket.html">Delete</a></td>
+            <td>
+              <Link to="/bracket">View</Link>
+            </td>
+            <td>
+              <Link to="/bracket">Edit</Link>
+            </td>
+            <td>
+              <Link to="/bracket">Delete</Link>
+            </td>
           </tr>
+
           <tr>
             <td>1</td>
             <td>Another Tournament</td>
             <td>8</td>
             <td>Double Elimination * Random</td>
             <td>Jan 23, 2026</td>
-            <td><a href="bracket.html">View</a></td>
-            <td><a href="bracket.html">Edit</a></td>
-            <td><a href="bracket.html">Delete</a></td>
+            <td>
+              <Link to="/bracket">View</Link>
+            </td>
+            <td>
+              <Link to="/bracket">Edit</Link>
+            </td>
+            <td>
+              <Link to="/bracket">Delete</Link>
+            </td>
           </tr>
         </tbody>
       </table>
-    </main>
+    </div>
   );
 }
-   
