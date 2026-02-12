@@ -94,9 +94,9 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Bundled using Vite** - I did not complete this part of the deliverable.
-- [ ] **Components** - I did not complete this part of the deliverable.
-- [ ] **Router** - I did not complete this part of the deliverable.
+- [x] **Bundled using Vite** - Ran `npm install vite`, installed bootstrap, etc. 
+- [x] **Components** - Each page has its own .jsx and .css file under the src folder structure. Created app.jsx and app.css files
+- [x] **Router** - app.jsx and main.jsx have routers installed
 
 ## 🚀 React part 2: Reactivity deliverable
 

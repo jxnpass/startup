@@ -52,7 +52,9 @@ I will need to fix the bracket page a bit more to make it look exactly how I wan
 
 ## React Part 1: Routing
 
-Setting up Vite and React was pretty simple. I had a bit of trouble because of conflicting CSS. This isn't as straight forward as you would find with Svelte or Vue, but I made it work in the end. If there was a ton of CSS it would be a real problem. It sure was nice to have the code structured in a more usable way.
+Setting up Vite and React was pretty simple. I had a bit of trouble because of conflicting CSS. 
+
+I started by creating the right structure that vite would expect: initializing repositories called public and src. The public stores my favicon, while src stores my JSX and CSS files. These all formulate a network for which the app can pull pages of content. What I really like most about this is that the header and footer can stay consistently on one page, while my app content can change as I navigate tabs.
 
 ## React Part 2: Reactivity
 
