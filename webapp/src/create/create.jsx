@@ -22,7 +22,7 @@ export function Create() {
 
             <li>
               <label>Bracket Type:</label>
-              <fieldset class="button-group">
+              <fieldset classname="button-group">
                 <input type="radio" id="single" name="varRadio" value="Single Elimination" checked />
                 <label for="single">Single Elimination</label>
 
@@ -46,7 +46,7 @@ export function Create() {
 
             <li>
               <label>Seeding:</label>
-              <fieldset class="button-group">
+              <fieldset classname="button-group">
                 <input type="radio" id="seeded" name="varSeeding" value="Seeded" checked />
                 <label for="seeded">Seeded</label>
 

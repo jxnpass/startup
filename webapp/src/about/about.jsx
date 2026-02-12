@@ -12,13 +12,13 @@ export function About() {
         and management.
       </p>
 
-      <div class="row">
-        <div class="col-md-6">
-          <div id="picture" class="picture-box"><img width="200px" alt="random"
+      <div classname="row">
+        <div classname="col-md-6">
+          <div id="picture" classname="picture-box"><img width="200px" alt="random"
            src="https://static.vecteezy.com/system/resources/previews/049/563/074/non_2x/icon-of-person-playing-volleyball-symbol-illustration-vector.jpg"/>
           </div>
         </div>
-        <div class="col-md-6">
+        <div classname="col-md-6">
           <div id="quote">
         <div><b>I like volleyball</b></div>
         <div>- Jackson </div>
