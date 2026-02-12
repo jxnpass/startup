@@ -1,17 +1,6 @@
+/* Wrapper that allows horizontal scrolling */
 .page-bracket {
-  max-width: 100%;
-}
-
-.bracket-page {
-  display: block;
   width: 100%;
-  overflow-x: auto;
-  position: relative;
-}
-
-.bracket-wrapper {
-  position: relative;
-  width: max-content;
 }
 
 .bracket-header {
@@ -27,63 +16,112 @@
 }
 
 .bracket-description {
-  color: #4169E1;
+  color: #4169e1;
 }
 
-.bracket {
-  display: flex;
-  align-items: flex-start;
-  gap: 3.5rem;
-  padding: 2rem 3rem 4rem;
-  min-width: max-content;
+.bracket-page {
+  width: 100%;
+  overflow-x: auto;
+  position: relative;
+}
+
+.bracket-wrapper {
+  position: relative;
+  width: max-content;
+  padding-bottom: 2rem;
 }
 
 #bracket-lines {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   pointer-events: none;
 }
 
-/* Rounds */
+/* The bracket grid */
+.bracket {
+  display: flex;
+  align-items: flex-start;
+  gap: 3.5rem;
+  padding: 1.5rem 3rem 4rem;
+  min-width: max-content;
+}
+
+/* Base round styling */
 .round {
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
   min-width: 240px;
-  justify-content: space-around;
 }
 
 .round h2 {
   text-align: center;
-  color: #4169E1;
+  color: #4169e1;
   font-size: 1.1rem;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem 0;
 }
 
-/* Matches */
-.match {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  position: relative;
-  min-height: 56px;
+/*
+  Legit bracket spacing:
+  Each next round is vertically centered between the two matchups feeding into it.
+  We do that with progressive top-padding + larger “pair spacing” per round.
+*/
+.round-16 {
+  padding-top: 0;
+}
+.round-16 .pair {
+  margin-bottom: 1.75rem;
 }
 
+.round-8 {
+  padding-top: 3rem;
+}
+.round-8 .pair {
+  margin-bottom: 8.75rem;
+}
+
+.round-4 {
+  padding-top: 8.75rem;
+}
+.round-4 .pair {
+  margin-bottom: 21rem;
+}
+
+.round-2 {
+  padding-top: 17.5rem;
+}
+.round-2 .pair {
+  margin-bottom: 0;
+}
+
+.round-1 {
+  padding-top: 21rem;
+}
+
+.round .pair:last-child {
+  margin-bottom: 0;
+}
+
+/* Pair / match / team boxes */
 .pair-inner {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
 
-/* Teams */
+.match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-height: 56px;
+}
+
 .team {
   display: flex;
   justify-content: space-between;
   align-items: center;
 
-  background-color: #F8F8FF;
-  border: 1px solid #4169E1;
+  background-color: #f8f8ff;
+  border: 1px solid #4169e1;
   padding: 0.45rem 0.6rem;
   border-radius: 6px;
 
@@ -94,15 +132,32 @@
 .team input {
   width: 2.2rem;
   border: none;
-  border-left: 1px solid #4169E1;
+  border-left: 1px solid #4169e1;
   padding-left: 0.4rem;
   text-align: center;
   background: transparent;
   outline: none;
 }
 
+/* Champion highlight */
+.champion .team {
+  font-weight: 700;
+  background-color: #2a2a94;
+  color: #f8f8ff;
+  border-color: #2a2a94;
+}
+.champion input {
+  color: #f8f8ff;
+  border-left: 1px solid #f8f8ff;
+}
+
+/* Responsive */
 @media (max-width: 900px) {
   .bracket {
-    align-items: flex-start;
+    padding: 1rem 1.25rem 3rem;
+  }
+
+  .round {
+    min-width: 220px;
   }
 }

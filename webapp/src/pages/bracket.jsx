@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react';
-import '../styles/bracket.css';
-import { drawAllConnections } from '../utils/bracketLines.js';
+import React, { useEffect } from "react";
+import "../styles/bracket.css";
+import { drawAllConnections } from "../utils/bracketLines.js";
 
 export default function Bracket() {
   useEffect(() => {
     const run = () => requestAnimationFrame(() => drawAllConnections());
-
     run();
-    window.addEventListener('resize', run);
-    return () => window.removeEventListener('resize', run);
+    window.addEventListener("resize", run);
+    return () => window.removeEventListener("resize", run);
   }, []);
 
   return (
@@ -25,7 +24,7 @@ export default function Bracket() {
         <div className="bracket-wrapper">
           <div className="bracket">
             {/* Round of 16 */}
-            <section className="round">
+            <section className="round round-16">
               <h2>Round of 16</h2>
 
               <div className="pair">
@@ -114,7 +113,7 @@ export default function Bracket() {
             </section>
 
             {/* Round of 8 */}
-            <section className="round">
+            <section className="round round-8">
               <h2>Round of 8</h2>
 
               <div className="pair">
@@ -171,7 +170,7 @@ export default function Bracket() {
             </section>
 
             {/* Semifinals */}
-            <section className="round">
+            <section className="round round-4">
               <h2>Semifinals</h2>
 
               <div className="pair">
@@ -202,7 +201,7 @@ export default function Bracket() {
             </section>
 
             {/* Final */}
-            <section className="round">
+            <section className="round round-2">
               <h2>Final</h2>
 
               <div className="pair">
@@ -220,11 +219,13 @@ export default function Bracket() {
             </section>
 
             {/* Champion */}
-            <section className="round">
+            <section className="round round-1">
               <h2>Champion</h2>
 
               <div className="match champion" id="m16">
-                <div className="team">Champion <input /></div>
+                <div className="team">
+                  Champion <input />
+                </div>
               </div>
             </section>
           </div>
