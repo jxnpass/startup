@@ -44,8 +44,10 @@ export default function Create() {
               <input type="radio" id="single" name="varRadio" value="Single Elimination" defaultChecked />
               <label htmlFor="single">Single Elimination</label>
 
-              <input type="radio" id="double" name="varRadio" value="Double Elimination" />
+              {/* Will try later...
+              <input type="radio" id="double" name="varRadio" value="Double Elimination" /> -->
               <label htmlFor="double">Double Elimination</label>
+              */}
 
               <input type="radio" id="roundrobin" name="varRadio" value="Round Robin" />
               <label htmlFor="roundrobin">Round Robin</label>
@@ -58,7 +60,7 @@ export default function Create() {
               type="number"
               id="teamCount"
               min="2"
-              max="16"
+              max="8"
               step="1"
               value={teamCount}
               onChange={(e) => setTeamCount(Math.max(2, Math.min(16, Number(e.target.value) || 2)))}

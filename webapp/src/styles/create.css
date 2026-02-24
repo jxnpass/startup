@@ -10,6 +10,8 @@
   color: #2a2a94;
   margin-bottom: 1.5rem;
   font-size: 2rem;
+  position: relative;
+  text-align: center;
 }
 
 .page-create form {
