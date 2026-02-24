@@ -1,18 +1,65 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles/create.css';
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "../styles/create.css";
+import {
+  createDefaultDraft,
+  clampTeamCount,
+  resizeTeamNames,
+  saveDraftToStorage,
+} from "../utils/bracketDraft.js";
 
 export default function Create() {
   const navigate = useNavigate();
 
-  const [teamCount, setTeamCount] = useState(2);
+  const [draft, setDraft] = useState(() => createDefaultDraft());
 
   const teams = useMemo(() => {
-    return Array.from({ length: teamCount }, (_, i) => ({
+    // Used only for rendering team inputs with stable IDs
+    return Array.from({ length: draft.teamCount }, (_, i) => ({
       id: i + 1,
-      name: `Team ${i + 1}`,
+      name: draft.teamNames[i] ?? `Team ${i + 1}`,
     }));
-  }, [teamCount]);
+  }, [draft.teamCount, draft.teamNames]);
+
+  function setType(nextType) {
+    setDraft((d) => {
+      const type = nextType === "roundrobin" ? "roundrobin" : "single";
+
+      // If switching to roundrobin: seeding not applicable → hide in UI + force random
+      if (type === "roundrobin") {
+        return {
+          ...d,
+          type,
+          mode: "random",
+          roundCount: d.roundCount || 1,
+        };
+      }
+
+      // Switching back to single: restore seeded default if somehow invalid
+      return {
+        ...d,
+        type,
+        mode: d.mode === "random" ? "random" : "seeded",
+      };
+    });
+  }
+
+  function setTeamCount(nextCountRaw) {
+    const nextCount = clampTeamCount(nextCountRaw);
+    setDraft((d) => ({
+      ...d,
+      teamCount: nextCount,
+      teamNames: resizeTeamNames(d.teamNames, nextCount),
+    }));
+  }
+
+  function setTeamName(index, value) {
+    setDraft((d) => {
+      const next = [...d.teamNames];
+      next[index] = value;
+      return { ...d, teamNames: next };
+    });
+  }
 
   return (
     <div className="page page-create">
@@ -21,8 +68,8 @@ export default function Create() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          // later: build bracket data and pass it via state/query params
-          navigate('/bracket');
+          saveDraftToStorage(draft);
+          navigate("/bracket");
         }}
       >
         <ul>
@@ -30,29 +77,76 @@ export default function Create() {
 
           <li>
             <label htmlFor="bracketName">Name of Bracket:</label>
-            <input type="text" id="bracketName" name="varName" placeholder="Name" />
+            <input
+              type="text"
+              id="bracketName"
+              name="varName"
+              placeholder="Name"
+              value={draft.bracketName}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, bracketName: e.target.value }))
+              }
+            />
           </li>
 
           <li>
             <label htmlFor="bracketDesc">Description:</label>
-            <textarea id="bracketDesc" name="varDescription" />
+            <textarea
+              id="bracketDesc"
+              name="varDescription"
+              value={draft.bracketDesc}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, bracketDesc: e.target.value }))
+              }
+            />
           </li>
 
           <li>
             <label>Bracket Type:</label>
             <fieldset className="button-group">
-              <input type="radio" id="single" name="varRadio" value="Single Elimination" defaultChecked />
+              <input
+                type="radio"
+                id="single"
+                name="varRadio"
+                value="single"
+                checked={draft.type === "single"}
+                onChange={() => setType("single")}
+              />
               <label htmlFor="single">Single Elimination</label>
 
-              {/* Will try later...
-              <input type="radio" id="double" name="varRadio" value="Double Elimination" /> -->
-              <label htmlFor="double">Double Elimination</label>
-              */}
-
-              <input type="radio" id="roundrobin" name="varRadio" value="Round Robin" />
+              <input
+                type="radio"
+                id="roundrobin"
+                name="varRadio"
+                value="roundrobin"
+                checked={draft.type === "roundrobin"}
+                onChange={() => setType("roundrobin")}
+              />
               <label htmlFor="roundrobin">Round Robin</label>
             </fieldset>
           </li>
+
+          {/* ✅ Round-robin-only setting */}
+          {draft.type === "roundrobin" ? (
+            <li>
+              <label htmlFor="roundCount">Number of Rounds:</label>
+              <input
+                type="number"
+                id="roundCount"
+                name="varRoundCount"
+                min="1"
+                max="10"
+                step="1"
+                value={draft.roundCount}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    roundCount: Math.max(1, Math.min(10, Number(e.target.value) || 1)),
+                  }))
+                }
+              />
+            </li>
+          ) : null}
 
           <li>
             <label htmlFor="teamCount">Number of Teams:</label>
@@ -62,33 +156,58 @@ export default function Create() {
               min="2"
               max="8"
               step="1"
-              value={teamCount}
-              onChange={(e) => setTeamCount(Math.max(2, Math.min(16, Number(e.target.value) || 2)))}
+              value={draft.teamCount}
+              onChange={(e) => setTeamCount(e.target.value)}
             />
           </li>
 
           <li>
             <label>Team Names:</label>
             <div id="teamNamesContainer">
-              {teams.map((t) => (
-                <input key={t.id} type="text" name={`varTeam${t.id}`} placeholder={`Team ${t.id}`} />
+              {teams.map((t, idx) => (
+                <input
+                  key={t.id}
+                  type="text"
+                  name={`varTeam${t.id}`}
+                  placeholder={`Team ${t.id}`}
+                  value={draft.teamNames[idx] ?? ""}
+                  onChange={(e) => setTeamName(idx, e.target.value)}
+                />
               ))}
             </div>
           </li>
 
-          <li>
-            <label>Seeding:</label>
-            <fieldset className="button-group">
-              <input type="radio" id="seeded" name="varSeeding" value="Seeded" defaultChecked />
-              <label htmlFor="seeded">Seeded</label>
+          {/* ✅ Single-elimination-only setting */}
+          {draft.type === "single" ? (
+            <li>
+              <label>Seeding:</label>
+              <fieldset className="button-group">
+                <input
+                  type="radio"
+                  id="seeded"
+                  name="varSeeding"
+                  value="seeded"
+                  checked={draft.mode === "seeded"}
+                  onChange={() => setDraft((d) => ({ ...d, mode: "seeded" }))}
+                />
+                <label htmlFor="seeded">Seeded</label>
 
-              <input type="radio" id="random" name="varSeeding" value="Random" />
-              <label htmlFor="random">Random</label>
-            </fieldset>
-          </li>
+                <input
+                  type="radio"
+                  id="random"
+                  name="varSeeding"
+                  value="random"
+                  checked={draft.mode === "random"}
+                  onChange={() => setDraft((d) => ({ ...d, mode: "random" }))}
+                />
+                <label htmlFor="random">Random</label>
+              </fieldset>
+            </li>
+          ) : null}
 
           <h4>Additional Options</h4>
 
+          {/* (unchanged for this checkpoint; we’ll wire these later) */}
           <li>
             <label htmlFor="colorTheme">Select a Color Theme:</label>
             <select id="colorTheme" name="varColorTheme" defaultValue="Default">
@@ -110,7 +229,9 @@ export default function Create() {
           </li>
 
           <li>
-            <label htmlFor="gamesAtOnce">Number of Games Played at Same Time:</label>
+            <label htmlFor="gamesAtOnce">
+              Number of Games Played at Same Time:
+            </label>
             <input type="number" id="gamesAtOnce" name="varGamesPerTimepoint" />
           </li>
 
@@ -135,7 +256,12 @@ export default function Create() {
 
           <li>
             <label htmlFor="editorEmails">Editor Emails:</label>
-            <input type="text" id="editorEmails" name="varEditorEmails" placeholder="comma-separated emails" />
+            <input
+              type="text"
+              id="editorEmails"
+              name="varEditorEmails"
+              placeholder="comma-separated emails"
+            />
           </li>
         </ul>
 
