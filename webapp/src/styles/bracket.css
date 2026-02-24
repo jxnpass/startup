@@ -115,6 +115,16 @@
   outline: none;
 }
 
+/* Winner highlight */
+.team-winner {
+  background-color: #A5E0FA;
+}
+
+/* Optional: keep loser unchanged, but leaving a class hook is nice */
+.team-loser {
+  /* intentionally unchanged for now */
+}
+
 /* Champion highlight */
 .champion .team {
   font-weight: 700;
