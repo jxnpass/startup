@@ -1,80 +1,45 @@
 // src/utils/bracketStructure.js
-// Store + normalize + view-model builder for brackets (single elim up to 8 for now).
-
 import { useSyncExternalStore } from "react";
 
 export const BRACKET_STORAGE_KEY = "bb_bracketDraft";
 const INTERNAL_EVENT = "bb_bracketDraft_changed";
 
-/**
- * Hook: returns the raw JSON string from localStorage (or null).
- * IMPORTANT: getSnapshot must be stable when nothing changes.
- * Returning parsed objects causes infinite loops because JSON.parse creates new objects.
- */
 export function useBracketDraftRaw(key = BRACKET_STORAGE_KEY) {
   function getSnapshot() {
-    return localStorage.getItem(key); // string | null (stable)
+    return localStorage.getItem(key);
   }
-
   function getServerSnapshot() {
     return null;
   }
-
   function subscribe(callback) {
     function onStorage(e) {
-      if (e.key === key) callback(); // other tabs
+      if (e.key === key) callback();
     }
     function onInternal() {
-      callback(); // same tab
+      callback();
     }
-
     window.addEventListener("storage", onStorage);
     window.addEventListener(INTERNAL_EVENT, onInternal);
-
     return () => {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener(INTERNAL_EVENT, onInternal);
     };
   }
-
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
-
-export function loadBracketFromStorage(key = BRACKET_STORAGE_KEY) {
-  const raw = localStorage.getItem(key);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
 }
 
 export function saveBracketToStorage(bracketObj, key = BRACKET_STORAGE_KEY) {
   localStorage.setItem(key, JSON.stringify(bracketObj));
-  // same-tab update trigger
   window.dispatchEvent(new Event(INTERNAL_EVENT));
 }
 
-/**
- * Expected (minimum) shape:
- * {
- *   bracketName: string,
- *   bracketDesc: string,
- *   type: "single" | "roundrobin",
- *   teamCount: number (2..8),
- *   teamNames: string[],
- *   mode: "seeded" | "random"
- * }
- */
 export function normalizeBracket(raw) {
   const bracketName = (raw?.bracketName ?? "").toString().trim();
   const bracketDesc = (raw?.bracketDesc ?? "").toString().trim();
-
   const type = raw?.type === "roundrobin" ? "roundrobin" : "single";
 
   const teamCountNum = Number(raw?.teamCount);
-  const teamCount = clampInt(teamCountNum, 2, 8);
+  const teamCount = clampInt(teamCountNum, 2, 16);
 
   const mode = raw?.mode === "random" ? "random" : "seeded";
 
@@ -107,33 +72,71 @@ export function buildBracketViewModel(rawBracket) {
     };
   }
 
-  const orderedTeams =
-    meta.mode === "random" ? shuffle([...meta.teamNames]) : [...meta.teamNames];
+  const target = nextPowerOfTwo(meta.teamCount);
 
-  const rounds = buildSingleElimRounds(orderedTeams);
+  let slottedTeams;
+  if (meta.mode === "random") {
+    slottedTeams = padTo(meta.teamNames, target, "BYE");
+    slottedTeams = shuffle(slottedTeams);
+  } else {
+    slottedTeams = seedIntoSlots(meta.teamNames, target);
+  }
+
+  const rounds = buildSingleElimRounds(slottedTeams);
 
   return {
     meta,
     kind: "single",
+    targetTeams: target, // used by CSS grid sizing
     rounds,
   };
 }
 
 /**
- * Single elimination rounds with stable IDs:
- * - Teams: t1..t8
- * - Winner placeholders: w1..w7
- * - Matches: m1..m7
- * - Champion placeholder: m16 (kept for compatibility with existing connector util)
+ * Seed placement orders (standard):
+ * 8: 1v8, 4v5, 3v6, 2v7 => [1,8,4,5,3,6,2,7]
+ * 16: [1,16,8,9,4,13,5,12,2,15,7,10,3,14,6,11]
  */
-function buildSingleElimRounds(teamNames) {
+function seedOrderFor(target) {
+  if (target === 2) return [1, 2];
+  if (target === 4) return [1, 4, 2, 3];
+  if (target === 8) return [1, 8, 4, 5, 3, 6, 2, 7];
+  if (target === 16)
+    return [1, 16, 8, 9, 4, 13, 5, 12, 2, 15, 7, 10, 3, 14, 6, 11];
+  return Array.from({ length: target }, (_, i) => i + 1);
+}
+
+function seedIntoSlots(teamNames, target) {
   const n = teamNames.length;
-  const target = nextPowerOfTwo(n);
+  const order = seedOrderFor(target);
+  return order.map((seedNum) => (seedNum <= n ? teamNames[seedNum - 1] : "BYE"));
+}
 
-  const padded = [...teamNames];
-  while (padded.length < target) padded.push("BYE");
+function padTo(arr, target, filler) {
+  const out = [...arr];
+  while (out.length < target) out.push(filler);
+  return out;
+}
 
-  const teamSlots = padded.map((name, idx) => ({
+/**
+ * Grid placement model:
+ * We create a consistent vertical track with rows = targetTeams * 2.
+ * Each round uses a span that doubles:
+ * - Round 1 match spans 4 rows
+ * - Semis span 8 rows
+ * - Final spans 16 rows
+ *
+ * Each match i in a round starts at:
+ * gridStart = 1 + i * span
+ * gridSpan  = span
+ *
+ * This guarantees the match blocks are centered at correct midpoints.
+ */
+function buildSingleElimRounds(slotTeams) {
+  const target = slotTeams.length;
+  const gridRows = target * 2; // used in CSS
+
+  const teamSlots = slotTeams.map((name, idx) => ({
     id: `t${idx + 1}`,
     name,
   }));
@@ -141,17 +144,22 @@ function buildSingleElimRounds(teamNames) {
   let matchCounter = 1;
   let winnerCounter = 1;
 
-  // Round 1
+  // Round 0: build actual matchups
+  let roundIndex = 0;
   let currentRoundMatches = [];
-  for (let i = 0; i < teamSlots.length; i += 2) {
-    const a = teamSlots[i];
-    const b = teamSlots[i + 1];
+
+  const span0 = Math.pow(2, roundIndex + 2); // 4
+  for (let i = 0; i < teamSlots.length / 2; i++) {
+    const a = teamSlots[i * 2];
+    const b = teamSlots[i * 2 + 1];
     const mId = `m${matchCounter++}`;
     const wId = `w${winnerCounter++}`;
 
     currentRoundMatches.push({
       matchId: mId,
       winnerId: wId,
+      gridStart: 1 + i * span0,
+      gridSpan: span0,
       teams: [
         { id: a.id, label: a.name },
         { id: b.id, label: b.name },
@@ -162,17 +170,20 @@ function buildSingleElimRounds(teamNames) {
   const rounds = [];
   rounds.push({
     roundId: "round_1",
-    title: roundTitle(teamSlots.length),
-    groupSize: 2,
+    title: roundTitle(target),
+    gridRows,
     matches: currentRoundMatches,
   });
 
   // Subsequent rounds
   while (currentRoundMatches.length > 1) {
+    roundIndex += 1;
+    const span = Math.pow(2, roundIndex + 2); // 8,16,32...
     const nextMatches = [];
-    for (let i = 0; i < currentRoundMatches.length; i += 2) {
-      const left = currentRoundMatches[i];
-      const right = currentRoundMatches[i + 1];
+
+    for (let i = 0; i < currentRoundMatches.length / 2; i++) {
+      const left = currentRoundMatches[i * 2];
+      const right = currentRoundMatches[i * 2 + 1];
 
       const mId = `m${matchCounter++}`;
       const wId = `w${winnerCounter++}`;
@@ -180,6 +191,8 @@ function buildSingleElimRounds(teamNames) {
       nextMatches.push({
         matchId: mId,
         winnerId: wId,
+        gridStart: 1 + i * span,
+        gridSpan: span,
         teams: [
           { id: left.winnerId, label: "Winner" },
           { id: right.winnerId, label: "Winner" },
@@ -189,26 +202,34 @@ function buildSingleElimRounds(teamNames) {
 
     rounds.push({
       roundId: `round_${rounds.length + 1}`,
-      title: roundTitle(nextMatches.length * 2),
-      groupSize: 1,
+      title: roundTitle(target / Math.pow(2, roundIndex)),
+      gridRows,
       matches: nextMatches,
     });
 
     currentRoundMatches = nextMatches;
   }
 
-  // Champion
+  // Champion column (kept as m16 for connector compatibility)
   rounds.push({
     roundId: "round_champion",
     title: "Champion",
-    groupSize: 1,
-    matches: [{ matchId: "m16", champion: true }],
+    gridRows,
+    matches: [
+      {
+        matchId: "m16",
+        champion: true,
+        gridStart: 1 + Math.floor(gridRows / 2) - 2,
+        gridSpan: 4,
+      },
+    ],
   });
 
   return rounds;
 }
 
 function roundTitle(teamsInRound) {
+  if (teamsInRound === 16) return "Round of 16";
   if (teamsInRound === 8) return "Round of 8";
   if (teamsInRound === 4) return "Semifinals";
   if (teamsInRound === 2) return "Final";

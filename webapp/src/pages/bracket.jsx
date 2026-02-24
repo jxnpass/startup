@@ -8,10 +8,8 @@ import {
 } from "../utils/bracketStructure.js";
 
 export default function Bracket() {
-  // ✅ Subscribe to raw JSON string (stable snapshot)
   const rawJson = useBracketDraftRaw(BRACKET_STORAGE_KEY);
 
-  // ✅ Parse only when the string changes
   const rawObj = useMemo(() => {
     if (!rawJson) return null;
     try {
@@ -48,14 +46,6 @@ export default function Bracket() {
 
   const { meta } = vm;
 
-  function roundClassName(index, total) {
-    if (index === total - 1) return "round round-1";
-    if (index === total - 2) return "round round-2";
-    if (index === total - 3) return "round round-4";
-    if (index === total - 4) return "round round-8";
-    return "round round-16";
-  }
-
   return (
     <div className="page page-bracket">
       <div className="bracket-header">
@@ -84,63 +74,62 @@ export default function Bracket() {
       <div className="bracket-page">
         <div className="bracket-wrapper">
           <div className="bracket">
-            {/* optional hidden container for now */}
-            <section style={{ display: "none" }}>
-              <ul id="teamNamesContainer">
-                {meta.teamNames.map((t, i) => (
-                  <li key={`${i}-${t}`}>{t}</li>
-                ))}
-              </ul>
-            </section>
-
             {vm.kind === "roundrobin" ? (
-              <section className="round round-16">
+              <section className="round">
                 <h2>Round Robin</h2>
-                <div className="pair">
-                  <div className="pair-inner">
-                    <div className="match">
-                      <div className="team">{vm.note}</div>
-                    </div>
+                <div className="round-grid">
+                  <div className="match" style={{ gridRow: "1 / span 4" }}>
+                    <div className="team">{vm.note}</div>
                   </div>
                 </div>
               </section>
             ) : (
-              vm.rounds.map((round, idx) => (
-                <section
-                  key={round.roundId}
-                  className={roundClassName(idx, vm.rounds.length)}
-                >
-                  <h2>{round.title}</h2>
+              vm.rounds.map((round, roundIdx) => {
+                const mult = Math.pow(2, roundIdx); // 1,2,4,8...
+                return (
+                  <section
+                    key={round.roundId}
+                    className="round"
+                    style={{
+                      "--grid-rows": round.gridRows,
+                      "--round-depth": roundIdx,
+                      "--round-mult": mult,
+                    }}
+                  >
+                    <h2>{round.title}</h2>
 
-                  {chunk(round.matches, round.groupSize).map((group, gIdx) => (
-                    <div className="pair" key={`${round.roundId}_pair_${gIdx}`}>
-                      <div className="pair-inner">
-                        {group.map((m) =>
-                          m.champion ? (
-                            <div
-                              className="match champion"
-                              id={m.matchId}
-                              key={m.matchId}
-                            >
-                              <div className="team">
-                                Champion <input />
+                    <div className="round-grid">
+                      {round.matches.map((m) =>
+                        m.champion ? (
+                          <div
+                            className="match champion"
+                            id={m.matchId}
+                            key={m.matchId}
+                            style={{ gridRow: `${m.gridStart} / span ${m.gridSpan}` }}
+                          >
+                            <div className="team">
+                              Champion <input />
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="match"
+                            id={m.matchId}
+                            key={m.matchId}
+                            style={{ gridRow: `${m.gridStart} / span ${m.gridSpan}` }}
+                          >
+                            {m.teams.map((t) => (
+                              <div className="team" id={t.id} key={t.id}>
+                                {t.label} <input />
                               </div>
-                            </div>
-                          ) : (
-                            <div className="match" id={m.matchId} key={m.matchId}>
-                              {m.teams.map((t) => (
-                                <div className="team" id={t.id} key={t.id}>
-                                  {t.label} <input />
-                                </div>
-                              ))}
-                            </div>
-                          )
-                        )}
-                      </div>
+                            ))}
+                          </div>
+                        )
+                      )}
                     </div>
-                  ))}
-                </section>
-              ))
+                  </section>
+                );
+              })
             )}
           </div>
 
@@ -149,11 +138,4 @@ export default function Bracket() {
       </div>
     </div>
   );
-}
-
-function chunk(arr, size) {
-  if (!size || size <= 0) return [arr];
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
 }
