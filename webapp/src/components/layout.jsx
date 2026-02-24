@@ -1,7 +1,10 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useUsername } from '../utils/userSession.js';
 
 export default function Layout() {
+  const username = useUsername();
+
   return (
     <div className="app-shell">
       <header className="site-header">
@@ -24,7 +27,9 @@ export default function Layout() {
           </NavLink>
         </nav>
 
-        <span className="header-user">Username: User</span>
+        <span className="header-user">
+          Username: {username ? username : 'Guest'}
+        </span>
       </header>
 
       <main className="site-main">
