@@ -58,26 +58,8 @@ I started by creating the right structure that vite would expect: initializing r
 
 ## React Part 2: Reactivity
 
-This was a lot of fun to see it all come together. I had to keep remembering to use React state instead of just manipulating the DOM directly.
+This was a lot of fun to see it all come together. The trickiest part was handling the bracket lines, but eventually it came together. 
 
-Handling the toggling of the checkboxes was particularly interesting.
+Ultimately, what was most exciting was seeing how a local storage system can save multiple brackets and retain the progress-state of the bracket. This will be very cool, and can make sharing brackets across users very easy since each bracket will have its own link to view. Having mulitple users edit the bracket will be a tricky component to detail. 
 
-```jsx
-<div className="input-group sound-button-container">
-  {calmSoundTypes.map((sound, index) => (
-    <div key={index} className="form-check form-switch">
-      <input
-        className="form-check-input"
-        type="checkbox"
-        value={sound}
-        id={sound}
-        onChange={() => togglePlay(sound)}
-        checked={selectedSounds.includes(sound)}
-      ></input>
-      <label className="form-check-label" htmlFor={sound}>
-        {sound}
-      </label>
-    </div>
-  ))}
-</div>
-```
+Another satisfying component was the link from creation of the bracket to the actual bracket itself. I used a JSON format to essentially have the bracketStructure.js or roundRobin.js files essentially read in the information from the bracketDraft.js file and essentially impute values. That will be a very nice feature when I eventually get into user-by-user data storage, where I can just save elements of the bracket / progress state. 

@@ -102,8 +102,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **All functionality implemented or mocked out** - I did not complete this part of the deliverable.
-- [ ] **Hooks** - I did not complete this part of the deliverable.
+- [x] **All functionality implemented or mocked out** - Building a bracket or round robin, logging in, editing the bracket live, declaring a winner, holding multiple brackets within a user. All of these are completed.
+- [x] **Hooks** - `useState` and `useEffects` hooks found on most pages 
 
 ## 🚀 Service deliverable
 
