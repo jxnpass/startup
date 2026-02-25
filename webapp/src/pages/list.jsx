@@ -16,7 +16,6 @@ export default function List() {
             <th>Type</th>
             <th>Date Created</th>
             <th>View</th>
-            <th>Edit</th>
             <th>Delete</th>
           </tr>
         </thead>
@@ -31,9 +30,6 @@ export default function List() {
               <Link to="/bracket">View</Link>
             </td>
             <td>
-              <Link to="/bracket">Edit</Link>
-            </td>
-            <td>
               <Link to="/bracket">Delete</Link>
             </td>
           </tr>
@@ -46,9 +42,6 @@ export default function List() {
             <td>Jan 23, 2026</td>
             <td>
               <Link to="/bracket">View</Link>
-            </td>
-            <td>
-              <Link to="/bracket">Edit</Link>
             </td>
             <td>
               <Link to="/bracket">Delete</Link>
