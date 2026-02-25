@@ -63,7 +63,8 @@ export default function Login() {
 
           <div className="login-actions">
             <button type="submit">Login</button>
-            <button type="button" onClick={() => navigate("/create")}>
+            <button type="button" onClick={() => {
+              const username = normalizeUsername(email); setUsername(username); navigate("/create");}}>
               Sign Up
             </button>
           </div>
