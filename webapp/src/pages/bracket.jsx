@@ -84,9 +84,6 @@ export default function Bracket() {
       <div className="bracket-header">
         <h1 className="bracket-title">{meta.bracketName}</h1>
         <p className="bracket-description">{meta.bracketDesc}</p>
-        <p className="bracket-description">
-          <Link to="/list">← Back to My Brackets</Link>
-        </p>
       </div>
 
       {vm.kind === "roundrobin" ? (

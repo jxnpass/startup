@@ -87,6 +87,7 @@ body {
    ====================== */
 .site-main {
   flex: 1;
+  align-items: stretch;
   padding: 2rem;
   display: flex;
   justify-content: center; /* centers page container */

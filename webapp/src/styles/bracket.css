@@ -2,6 +2,12 @@
   width: 100%;
 }
 
+.page.page-bracket {
+  max-width: none;
+  width: 100%;
+  margin: 0 auto;
+}
+
 .bracket-header {
   width: 100%;
   max-width: 1200px;
@@ -22,14 +28,20 @@
   width: 100%;
   overflow-x: auto;
   position: relative;
+
+  text-align: center;
+
+  padding: 0 1rem;
 }
 
 .bracket-wrapper {
   position: relative;
   width: max-content;
   padding-bottom: 2rem;
-}
 
+  display: inline-block;  
+  text-align: left;       
+}
 #bracket-lines {
   position: absolute;
   inset: 0;
@@ -61,11 +73,6 @@
   --round-depth: 0;
   --round-mult: 1;
 
-  /*
-    ✅ Dynamic internal spacing that grows by round.
-    This keeps first-round matches compact, while later rounds open up so
-    the winner anchors (w#) sit exactly between their source matches.
-  */
   --match-gap: calc(0.6rem + (3.0rem * var(--round-depth)));
 }
 
@@ -149,11 +156,6 @@
   outline: none;
 }
 
-/* Winner highlight */
-/* Optional: keep loser unchanged, but leaving a class hook is nice */
-.team-loser {
-  /* intentionally unchanged for now */
-}
 
 /* Champion highlight */
 .champion .team {
@@ -167,9 +169,13 @@
   border-left: 1px solid #f8f8ff;
 }
 
+/* Winner highlight */
+/* Optional: keep loser unchanged, but leaving a class hook is nice */
+
 .team-winner {
-  background-color: #A5E0FA;
+  background-color: #a5e0fa91;
 }
+
 
 /* ---------------- ROUND ROBIN ---------------- */
 
