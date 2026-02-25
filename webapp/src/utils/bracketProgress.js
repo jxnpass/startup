@@ -1,27 +1,20 @@
 // src/utils/bracketProgress.js
-// Stores editable match scores + derived state triggers in localStorage.
-// Uses a stable snapshot (raw JSON string) to avoid syncExternalStore infinite loops.
-
 import { useSyncExternalStore } from "react";
 
 export const BRACKET_PROGRESS_KEY = "bb_bracketProgress";
 const INTERNAL_EVENT = "bb_bracketProgress_changed";
 
 /**
- * Progress shape:
+ * Stored shape:
  * {
- *   scores: {
- *     [matchId]: { [teamSlotId]: number|string }   // e.g. scores["m1"]["t1"] = 25
- *   },
- *   sig: {
- *     [matchId]: string                           // participant signature: "Team A||Team B"
- *   }
+ *   scores: { [matchId]: { [teamId]: string } },
+ *   sig:    { [matchId]: string } // participant signature for auto-clearing
  * }
  */
 
 export function useBracketProgressRaw(key = BRACKET_PROGRESS_KEY) {
   function getSnapshot() {
-    return localStorage.getItem(key); // stable string|null
+    return localStorage.getItem(key);
   }
   function getServerSnapshot() {
     return null;
@@ -65,15 +58,10 @@ export function saveProgress(progress, key = BRACKET_PROGRESS_KEY) {
 export function updateScore({ matchId, teamId, value }, key = BRACKET_PROGRESS_KEY) {
   const progress = loadProgress(key);
   if (!progress.scores[matchId]) progress.scores[matchId] = {};
-
-  // Store "" for empty to keep controlled input stable
   progress.scores[matchId][teamId] = value;
-
   saveProgress(progress, key);
 }
 
 export function clearMatchScores(progress, matchId) {
-  if (progress.scores?.[matchId]) {
-    delete progress.scores[matchId];
-  }
+  if (progress.scores?.[matchId]) delete progress.scores[matchId];
 }

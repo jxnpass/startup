@@ -1,65 +1,39 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/create.css";
-import {
-  createDefaultDraft,
-  clampTeamCount,
-  resizeTeamNames,
-  saveDraftToStorage,
-} from "../utils/bracketDraft.js";
+import { saveBracketDraft } from "../utils/bracketDraft.js";
 
 export default function Create() {
   const navigate = useNavigate();
 
-  const [draft, setDraft] = useState(() => createDefaultDraft());
+  const [bracketName, setBracketName] = useState("");
+  const [bracketDesc, setBracketDesc] = useState("");
+
+  const [type, setType] = useState("single"); // "single" | "roundrobin"
+  const [teamCount, setTeamCount] = useState(2);
+
+  const [mode, setMode] = useState("seeded"); // seeded | random (single only)
+  const [rrRounds, setRrRounds] = useState(1);
 
   const teams = useMemo(() => {
-    // Used only for rendering team inputs with stable IDs
-    return Array.from({ length: draft.teamCount }, (_, i) => ({
+    return Array.from({ length: teamCount }, (_, i) => ({
       id: i + 1,
-      name: draft.teamNames[i] ?? `Team ${i + 1}`,
+      name: "",
     }));
-  }, [draft.teamCount, draft.teamNames]);
+  }, [teamCount]);
 
-  function setType(nextType) {
-    setDraft((d) => {
-      const type = nextType === "roundrobin" ? "roundrobin" : "single";
+  const [teamNames, setTeamNames] = useState([]);
 
-      // If switching to roundrobin: seeding not applicable → hide in UI + force random
-      if (type === "roundrobin") {
-        return {
-          ...d,
-          type,
-          mode: "random",
-          roundCount: d.roundCount || 1,
-        };
-      }
-
-      // Switching back to single: restore seeded default if somehow invalid
-      return {
-        ...d,
-        type,
-        mode: d.mode === "random" ? "random" : "seeded",
-      };
+  // keep teamNames array sized to teamCount
+  React.useEffect(() => {
+    setTeamNames((prev) => {
+      const next = [...prev];
+      while (next.length < teamCount) next.push("");
+      return next.slice(0, teamCount);
     });
-  }
+  }, [teamCount]);
 
-  function setTeamCount(nextCountRaw) {
-    const nextCount = clampTeamCount(nextCountRaw);
-    setDraft((d) => ({
-      ...d,
-      teamCount: nextCount,
-      teamNames: resizeTeamNames(d.teamNames, nextCount),
-    }));
-  }
-
-  function setTeamName(index, value) {
-    setDraft((d) => {
-      const next = [...d.teamNames];
-      next[index] = value;
-      return { ...d, teamNames: next };
-    });
-  }
+  const baseRR = Math.max(1, teamCount - 1); // typical single round robin
 
   return (
     <div className="page page-create">
@@ -68,7 +42,18 @@ export default function Create() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          saveDraftToStorage(draft);
+
+          const draft = {
+            bracketName,
+            bracketDesc,
+            type, // "single" or "roundrobin"
+            teamCount,
+            teamNames: teamNames.map((n, i) => (n?.trim() ? n.trim() : `Team ${i + 1}`)),
+            mode: type === "roundrobin" ? "random" : mode,
+            rrRounds: type === "roundrobin" ? rrRounds : undefined,
+          };
+
+          saveBracketDraft(draft);
           navigate("/bracket");
         }}
       >
@@ -80,12 +65,9 @@ export default function Create() {
             <input
               type="text"
               id="bracketName"
-              name="varName"
+              value={bracketName}
+              onChange={(e) => setBracketName(e.target.value)}
               placeholder="Name"
-              value={draft.bracketName}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, bracketName: e.target.value }))
-              }
             />
           </li>
 
@@ -93,11 +75,8 @@ export default function Create() {
             <label htmlFor="bracketDesc">Description:</label>
             <textarea
               id="bracketDesc"
-              name="varDescription"
-              value={draft.bracketDesc}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, bracketDesc: e.target.value }))
-              }
+              value={bracketDesc}
+              onChange={(e) => setBracketDesc(e.target.value)}
             />
           </li>
 
@@ -107,9 +86,9 @@ export default function Create() {
               <input
                 type="radio"
                 id="single"
-                name="varRadio"
+                name="bracketType"
                 value="single"
-                checked={draft.type === "single"}
+                checked={type === "single"}
                 onChange={() => setType("single")}
               />
               <label htmlFor="single">Single Elimination</label>
@@ -117,36 +96,32 @@ export default function Create() {
               <input
                 type="radio"
                 id="roundrobin"
-                name="varRadio"
+                name="bracketType"
                 value="roundrobin"
-                checked={draft.type === "roundrobin"}
+                checked={type === "roundrobin"}
                 onChange={() => setType("roundrobin")}
               />
               <label htmlFor="roundrobin">Round Robin</label>
             </fieldset>
           </li>
 
-          {/* ✅ Round-robin-only setting */}
-          {draft.type === "roundrobin" ? (
+          {type === "roundrobin" && (
             <li>
-              <label htmlFor="roundCount">Number of Rounds:</label>
+              <label htmlFor="rrRounds">Number of Rounds:</label>
               <input
                 type="number"
-                id="roundCount"
-                name="varRoundCount"
+                id="rrRounds"
                 min="1"
-                max="10"
+                max="50"
                 step="1"
-                value={draft.roundCount}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    roundCount: Math.max(1, Math.min(10, Number(e.target.value) || 1)),
-                  }))
-                }
+                value={rrRounds}
+                onChange={(e) => setRrRounds(Math.max(1, Number(e.target.value) || 1))}
               />
+              <div style={{ fontSize: "0.9rem", color: "#4169E1", marginTop: "0.25rem" }}>
+                Typical single round robin is {baseRR} rounds (each team plays everyone once).
+              </div>
             </li>
-          ) : null}
+          )}
 
           <li>
             <label htmlFor="teamCount">Number of Teams:</label>
@@ -154,10 +129,12 @@ export default function Create() {
               type="number"
               id="teamCount"
               min="2"
-              max="8"
+              max="16"
               step="1"
-              value={draft.teamCount}
-              onChange={(e) => setTeamCount(e.target.value)}
+              value={teamCount}
+              onChange={(e) =>
+                setTeamCount(Math.max(2, Math.min(16, Number(e.target.value) || 2)))
+              }
             />
           </li>
 
@@ -168,46 +145,52 @@ export default function Create() {
                 <input
                   key={t.id}
                   type="text"
-                  name={`varTeam${t.id}`}
                   placeholder={`Team ${t.id}`}
-                  value={draft.teamNames[idx] ?? ""}
-                  onChange={(e) => setTeamName(idx, e.target.value)}
+                  value={teamNames[idx] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setTeamNames((prev) => {
+                      const next = [...prev];
+                      next[idx] = v;
+                      return next;
+                    });
+                  }}
                 />
               ))}
             </div>
           </li>
 
-          {/* ✅ Single-elimination-only setting */}
-          {draft.type === "single" ? (
+          {/* Seeding only for single elimination */}
+          {type === "single" && (
             <li>
               <label>Seeding:</label>
               <fieldset className="button-group">
                 <input
                   type="radio"
                   id="seeded"
-                  name="varSeeding"
+                  name="seeding"
                   value="seeded"
-                  checked={draft.mode === "seeded"}
-                  onChange={() => setDraft((d) => ({ ...d, mode: "seeded" }))}
+                  checked={mode === "seeded"}
+                  onChange={() => setMode("seeded")}
                 />
                 <label htmlFor="seeded">Seeded</label>
 
                 <input
                   type="radio"
                   id="random"
-                  name="varSeeding"
+                  name="seeding"
                   value="random"
-                  checked={draft.mode === "random"}
-                  onChange={() => setDraft((d) => ({ ...d, mode: "random" }))}
+                  checked={mode === "random"}
+                  onChange={() => setMode("random")}
                 />
                 <label htmlFor="random">Random</label>
               </fieldset>
             </li>
-          ) : null}
+          )}
 
+          {/* keep additional options as-is (future checkpoint) */}
           <h4>Additional Options</h4>
 
-          {/* (unchanged for this checkpoint; we’ll wire these later) */}
           <li>
             <label htmlFor="colorTheme">Select a Color Theme:</label>
             <select id="colorTheme" name="varColorTheme" defaultValue="Default">
@@ -229,9 +212,7 @@ export default function Create() {
           </li>
 
           <li>
-            <label htmlFor="gamesAtOnce">
-              Number of Games Played at Same Time:
-            </label>
+            <label htmlFor="gamesAtOnce">Number of Games Played at Same Time:</label>
             <input type="number" id="gamesAtOnce" name="varGamesPerTimepoint" />
           </li>
 

@@ -1,47 +1,23 @@
 // src/utils/bracketStructure.js
-import { useSyncExternalStore } from "react";
+import { buildRoundRobinSchedule } from "./roundRobin.js";
 
 export const BRACKET_STORAGE_KEY = "bb_bracketDraft";
-const INTERNAL_EVENT = "bb_bracketDraft_changed";
 
-export function useBracketDraftRaw(key = BRACKET_STORAGE_KEY) {
-  function getSnapshot() {
-    return localStorage.getItem(key);
-  }
-  function getServerSnapshot() {
-    return null;
-  }
-  function subscribe(callback) {
-    function onStorage(e) {
-      if (e.key === key) callback();
-    }
-    function onInternal() {
-      callback();
-    }
-    window.addEventListener("storage", onStorage);
-    window.addEventListener(INTERNAL_EVENT, onInternal);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener(INTERNAL_EVENT, onInternal);
-    };
-  }
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
-
-export function saveBracketToStorage(bracketObj, key = BRACKET_STORAGE_KEY) {
-  localStorage.setItem(key, JSON.stringify(bracketObj));
-  window.dispatchEvent(new Event(INTERNAL_EVENT));
-}
-
-export function normalizeBracket(raw) {
-  const bracketName = (raw?.bracketName ?? "").toString().trim();
+export function normalizeDraft(raw) {
+  const bracketName = (raw?.bracketName ?? "").toString().trim() || "Untitled Bracket";
   const bracketDesc = (raw?.bracketDesc ?? "").toString().trim();
+
   const type = raw?.type === "roundrobin" ? "roundrobin" : "single";
 
   const teamCountNum = Number(raw?.teamCount);
   const teamCount = clampInt(teamCountNum, 2, 16);
 
-  const mode = raw?.mode === "random" ? "random" : "seeded";
+  // Seeding only applies to single elimination
+  let mode = raw?.mode === "random" ? "random" : "seeded";
+  if (type === "roundrobin") mode = "random";
+
+  const rrRoundsNum = Number(raw?.rrRounds);
+  const rrRounds = Math.max(1, Math.floor(rrRoundsNum || 1));
 
   const inputNames = Array.isArray(raw?.teamNames) ? raw.teamNames : [];
   const teamNames = Array.from({ length: teamCount }, (_, i) => {
@@ -49,54 +25,50 @@ export function normalizeBracket(raw) {
     return v || `Team ${i + 1}`;
   });
 
-  return {
-    bracketName: bracketName || "Untitled Bracket",
-    bracketDesc,
-    type,
-    teamCount,
-    teamNames,
-    mode,
-  };
+  return { bracketName, bracketDesc, type, teamCount, teamNames, mode, rrRounds };
 }
 
-export function buildBracketViewModel(rawBracket) {
-  const meta = normalizeBracket(rawBracket);
+export function buildViewModel(rawDraft) {
+  const meta = normalizeDraft(rawDraft);
 
   if (meta.type === "roundrobin") {
+    const teamIds = meta.teamNames.map((_, i) => `rr${i + 1}`);
+    const teamById = Object.fromEntries(teamIds.map((id, i) => [id, meta.teamNames[i]]));
+
+    const rounds = buildRoundRobinSchedule(teamIds, meta.rrRounds);
+
     return {
       meta,
       kind: "roundrobin",
-      rounds: [],
-      note:
-        "Round-robin rendering will be implemented next. Settings loaded correctly.",
+      rr: {
+        teamIds,
+        teamById,
+        rounds,
+      },
     };
   }
 
+  // single-elimination (keep simple baseline: power-of-two padding + standard seeds)
   const target = nextPowerOfTwo(meta.teamCount);
+  let slots = [...meta.teamNames];
 
-  let slottedTeams;
+  while (slots.length < target) slots.push("BYE");
+
   if (meta.mode === "random") {
-    slottedTeams = padTo(meta.teamNames, target, "BYE");
-    slottedTeams = shuffle(slottedTeams);
+    slots = shuffle(slots);
   } else {
-    slottedTeams = seedIntoSlots(meta.teamNames, target);
+    slots = seedIntoSlots(slots, target);
   }
 
-  const rounds = buildSingleElimRounds(slottedTeams);
+  const rounds = buildSingleElimRounds(slots);
 
   return {
     meta,
     kind: "single",
-    targetTeams: target, // used by CSS grid sizing
     rounds,
   };
 }
 
-/**
- * Seed placement orders (standard):
- * 8: 1v8, 4v5, 3v6, 2v7 => [1,8,4,5,3,6,2,7]
- * 16: [1,16,8,9,4,13,5,12,2,15,7,10,3,14,6,11]
- */
 function seedOrderFor(target) {
   if (target === 2) return [1, 2];
   if (target === 4) return [1, 4, 2, 3];
@@ -106,35 +78,16 @@ function seedOrderFor(target) {
   return Array.from({ length: target }, (_, i) => i + 1);
 }
 
-function seedIntoSlots(teamNames, target) {
-  const n = teamNames.length;
+function seedIntoSlots(teamNamesOrByes, target) {
+  // teamNamesOrByes length == target (may include BYE)
+  // For seeded, assume initial list is in seed order (1..n then BYEs at end).
   const order = seedOrderFor(target);
-  return order.map((seedNum) => (seedNum <= n ? teamNames[seedNum - 1] : "BYE"));
+  return order.map((seedNum) => teamNamesOrByes[seedNum - 1] ?? "BYE");
 }
 
-function padTo(arr, target, filler) {
-  const out = [...arr];
-  while (out.length < target) out.push(filler);
-  return out;
-}
-
-/**
- * Grid placement model:
- * We create a consistent vertical track with rows = targetTeams * 2.
- * Each round uses a span that doubles:
- * - Round 1 match spans 4 rows
- * - Semis span 8 rows
- * - Final spans 16 rows
- *
- * Each match i in a round starts at:
- * gridStart = 1 + i * span
- * gridSpan  = span
- *
- * This guarantees the match blocks are centered at correct midpoints.
- */
 function buildSingleElimRounds(slotTeams) {
   const target = slotTeams.length;
-  const gridRows = target * 2; // used in CSS
+  const gridRows = target * 2;
 
   const teamSlots = slotTeams.map((name, idx) => ({
     id: `t${idx + 1}`,
@@ -144,7 +97,6 @@ function buildSingleElimRounds(slotTeams) {
   let matchCounter = 1;
   let winnerCounter = 1;
 
-  // Round 0: build actual matchups
   let roundIndex = 0;
   let currentRoundMatches = [];
 
@@ -175,10 +127,9 @@ function buildSingleElimRounds(slotTeams) {
     matches: currentRoundMatches,
   });
 
-  // Subsequent rounds
   while (currentRoundMatches.length > 1) {
     roundIndex += 1;
-    const span = Math.pow(2, roundIndex + 2); // 8,16,32...
+    const span = Math.pow(2, roundIndex + 2);
     const nextMatches = [];
 
     for (let i = 0; i < currentRoundMatches.length / 2; i++) {
@@ -210,7 +161,6 @@ function buildSingleElimRounds(slotTeams) {
     currentRoundMatches = nextMatches;
   }
 
-  // Champion column (kept as m16 for connector compatibility)
   rounds.push({
     roundId: "round_champion",
     title: "Champion",
@@ -248,11 +198,12 @@ function nextPowerOfTwo(x) {
 }
 
 function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    const tmp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = tmp;
+    const tmp = a[i];
+    a[i] = a[j];
+    a[j] = tmp;
   }
-  return arr;
+  return a;
 }

@@ -80,6 +80,69 @@
   position: relative;
 }
 
+/* ---------------- ROUND ROBIN ---------------- */
+
+.rr-page {
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.rr-round {
+  margin: 2rem 0;
+}
+
+.rr-title {
+  text-align: center;
+  color: #4169e1;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.rr-matches {
+  display: flex;
+  flex-direction: row;        /* horizontal row of matches */
+  flex-wrap: wrap;            /* wrap if too many */
+  gap: 1.25rem;
+  justify-content: center;
+}
+
+.rr-match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* standings table */
+.rr-standings {
+  margin-top: 3rem;
+}
+
+.rr-standings-table {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.rr-standings-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 90px 120px;
+  gap: 0.5rem;
+  align-items: center;
+
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #4169e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.rr-standings-head {
+  font-weight: 700;
+  background: rgba(165, 224, 250, 0.25);
+}
+
 /* ✅ Match blocks centered within their grid span */
 .match {
   display: flex;
