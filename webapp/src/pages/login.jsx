@@ -64,7 +64,7 @@ export default function Login() {
           <div className="login-actions">
             <button type="submit">Login</button>
             <button type="button" onClick={() => navigate("/create")}>
-              Create
+              Sign Up
             </button>
           </div>
         </form>

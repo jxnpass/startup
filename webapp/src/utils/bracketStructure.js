@@ -34,7 +34,7 @@ export function normalizeDraft(raw) {
   const bracketDesc = (raw?.bracketDesc ?? "").toString().trim();
   const type = raw?.type === "roundrobin" ? "roundrobin" : "single";
 
-  const teamCount = clampInt(Number(raw?.teamCount), 2, 8);
+  const teamCount = clampInt(Number(raw?.teamCount), 2, 16);
 
   const inputNames = Array.isArray(raw?.teamNames) ? raw.teamNames : [];
   const teamNames = Array.from({ length: teamCount }, (_, i) => {

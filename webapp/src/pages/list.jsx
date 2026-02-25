@@ -9,6 +9,8 @@ import {
   progressKeyFor,
 } from "../utils/bracketLibrary.js";
 
+import { buildBracketViewModel } from "../utils/bracketStructure.js";
+
 function readDraft(id) {
   const raw = localStorage.getItem(draftKeyFor(id));
   if (!raw) return null;
@@ -29,20 +31,103 @@ function readProgress(id) {
   }
 }
 
-function computeStatus(_draft, progress) {
-  // Conservative status:
-  // Finished if every stored match has 2 filled scores; otherwise In Progress.
-  const scores = progress?.scores || {};
-  const matchIds = Object.keys(scores);
-  if (matchIds.length === 0) return "In Progress";
+function isFilled(v) {
+  return !(v === "" || v == null);
+}
 
-  for (const mid of matchIds) {
+function anyScoreEntered(progress) {
+  const scores = progress?.scores || {};
+  for (const mid of Object.keys(scores)) {
     const entry = scores[mid] || {};
-    const vals = Object.values(entry);
-    if (vals.length < 2) return "In Progress";
-    if (vals[0] === "" || vals[0] == null || vals[1] === "" || vals[1] == null) return "In Progress";
+    for (const v of Object.values(entry)) {
+      if (isFilled(v)) return true;
+    }
   }
-  return "Finished";
+  return false;
+}
+
+function computeStatus(draft, progress) {
+  // Status rules:
+  // - Not Started (red) if no score entries exist
+  // - For Single Elim: show current round title (yellow) until final winner determined
+  // - Finished (green) only once Final has a winner (non-tie)
+  // - For Round Robin: show Round k (yellow) based on first incomplete round; Finished when all rounds complete
+
+  const started = anyScoreEntered(progress);
+  if (!started) return { label: "Not Started", tone: "notstarted" };
+
+  let vm = null;
+  try {
+    vm = draft ? buildBracketViewModel(draft) : null;
+  } catch {
+    vm = null;
+  }
+  if (!vm) return { label: "In Progress", tone: "progress" };
+
+  const scores = progress?.scores || {};
+  const scoreFor = (matchId, teamId) => scores?.[matchId]?.[teamId];
+
+  if (vm.kind === "roundrobin") {
+    const rounds = vm.rr?.rounds || [];
+
+    const roundComplete = (round) => {
+      const matches = round?.matches || [];
+      if (matches.length === 0) return true;
+      return matches.every((m) => {
+        const a = scoreFor(m.matchId, m.aId);
+        const b = scoreFor(m.matchId, m.bId);
+        return isFilled(a) && isFilled(b);
+      });
+    };
+
+    for (const r of rounds) {
+      if (!roundComplete(r)) return { label: `Round ${r.roundIndex}`, tone: "progress" };
+    }
+    return { label: "Finished", tone: "finished" };
+  }
+
+  // Single elimination
+  const se = vm.se;
+  const rounds = (se?.rounds || []).filter((r) => r.roundId !== "round_champion");
+
+  const matchComplete = (m) => {
+    const teams = m?.teams || [];
+    const a = teams[0];
+    const b = teams[1];
+    const aLabel = (a?.label ?? "").toString().toUpperCase();
+    const bLabel = (b?.label ?? "").toString().toUpperCase();
+    // BYE auto-advances without scores (only reliably knowable in first round)
+    if (aLabel === "BYE" || bLabel === "BYE") return true;
+    const av = scoreFor(m.matchId, a?.id);
+    const bv = scoreFor(m.matchId, b?.id);
+    return isFilled(av) && isFilled(bv);
+  };
+
+  const roundComplete = (r) => {
+    const matches = r?.matches || [];
+    if (matches.length === 0) return true;
+    return matches.every(matchComplete);
+  };
+
+  for (const r of rounds) {
+    if (!roundComplete(r)) return { label: r.title, tone: "progress" };
+  }
+
+  // All rounds have scores — only "Finished" once Final produces a winner.
+  const finalRound = rounds[rounds.length - 1];
+  const finalMatch = finalRound?.matches?.[0];
+  if (!finalMatch) return { label: "Finished", tone: "finished" };
+
+  const aId = finalMatch.teams?.[0]?.id;
+  const bId = finalMatch.teams?.[1]?.id;
+  const aRaw = scoreFor(finalMatch.matchId, aId);
+  const bRaw = scoreFor(finalMatch.matchId, bId);
+
+  const aNum = isFilled(aRaw) ? Number(aRaw) : NaN;
+  const bNum = isFilled(bRaw) ? Number(bRaw) : NaN;
+
+  const hasWinner = Number.isFinite(aNum) && Number.isFinite(bNum) && aNum !== bNum;
+  return hasWinner ? { label: "Finished", tone: "finished" } : { label: "Final", tone: "progress" };
 }
 
 export default function List() {
@@ -124,8 +209,16 @@ export default function List() {
               <td>{r.teamCount}</td>
               <td>{r.typeLabel}</td>
               <td>
-                <span className={r.status === "Finished" ? "status-finished" : "status-progress"}>
-                  {r.status}
+                <span
+                  className={
+                    r.status.tone === "finished"
+                      ? "status-finished"
+                      : r.status.tone === "notstarted"
+                      ? "status-notstarted"
+                      : "status-progress"
+                  }
+                >
+                  {r.status.label}
                 </span>
               </td>
               <td>

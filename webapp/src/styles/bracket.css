@@ -39,11 +39,17 @@
 /* Main bracket */
 .bracket {
   display: flex;
+  flex-direction: row;
   align-items: stretch;
-  gap: 4.5rem;
+  gap: 5.5rem;
   padding: 1.5rem 3.5rem 4rem;
   min-width: max-content;
+  background-color: #ffffff;
+  border-radius: 30px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  margin: 0 auto;
 }
+
 
 /* Round column */
 .round {
@@ -172,7 +178,12 @@
   max-width: 1300px;
   margin: 0 auto;
   padding: 0 1rem 2rem;
+  background-color: #ffffff;
+  border-radius: 30px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  margin: 0 auto;
 }
+
 
 .rr-round {
   margin: 2rem 0;
@@ -183,6 +194,7 @@
   color: #4169e1;
   font-size: 1.2rem;
   margin-bottom: 1rem;
+  margin: 0 0 1rem 0;
 }
 
 .rr-matches {

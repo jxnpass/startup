@@ -72,6 +72,10 @@
   color: #1b8f3a;
   font-weight: 700;
 }
+.status-notstarted {
+  color: #b32020;
+  font-weight: 700;
+}
 .status-progress {
   color: #c59b00;
   font-weight: 700;

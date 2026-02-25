@@ -26,6 +26,9 @@
   display: flex;
   flex-direction: column;
   min-width: 375px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* Header and footer stay visible */
@@ -42,12 +45,11 @@ header {
 
 /* Main content stretches */
 main {
-  flex: 1 ;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  align-items: stretch;
+  justify-content: flex-start;
   padding: 2rem;
 }
 
