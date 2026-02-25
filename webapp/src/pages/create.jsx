@@ -136,9 +136,9 @@ export default function Create() {
               type="number"
               id="teamCount"
               min="2"
-              max="8"
+              max="16"
               value={teamCount}
-              onChange={(e) => setTeamCount(Math.max(2, Math.min(8, Number(e.target.value) || 2)))}
+              onChange={(e) => setTeamCount(Math.max(2, Math.min(16, Number(e.target.value) || 2)))}
             />
           </li>
 

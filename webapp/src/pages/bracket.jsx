@@ -55,8 +55,11 @@ export default function Bracket() {
 
   useEffect(() => {
     // Redraw lines after DOM settles
-    const raf = requestAnimationFrame(() => drawAllConnections());
-    const onResize = () => drawAllConnections();
+    // NOTE: current view model stores single-elim size at vm.se.size.
+    // (Older versions used vm.targetTeams.) If sizeHint is 0, no pairs draw.
+    const sizeHint = vm?.kind === "single" ? (vm.se?.size ?? 0) : 0;
+    const raf = requestAnimationFrame(() => drawAllConnections(sizeHint));
+    const onResize = () => drawAllConnections(sizeHint);
     window.addEventListener("resize", onResize);
     return () => {
       cancelAnimationFrame(raf);

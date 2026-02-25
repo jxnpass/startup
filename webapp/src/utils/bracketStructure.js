@@ -25,6 +25,7 @@ function seedOrderFor(size) {
   if (size === 2) return [1, 2];
   if (size === 4) return [1, 4, 2, 3];
   if (size === 8) return [1, 8, 4, 5, 3, 6, 2, 7];
+  if (size === 16) return [1, 16, 8, 9, 4, 13, 5, 12, 3, 14, 6, 11, 2, 15, 7, 10];
   return Array.from({ length: size }, (_, i) => i + 1);
 }
 
@@ -51,7 +52,7 @@ export function normalizeDraft(raw) {
 }
 
 function roundTitle(size, roundIdx) {
-  // for size=8: roundIdx0=Round of 8, 1=Semifinals, 2=Final
+  // for size=16: roundIdx0=Round of 8, 1=Semifinals, 2=Final
   const teamsThisRound = size / Math.pow(2, roundIdx);
   if (teamsThisRound === 2) return "Final";
   if (teamsThisRound === 4) return "Semifinals";

@@ -55,8 +55,12 @@
   --round-depth: 0;
   --round-mult: 1;
 
-  /* Single-elim match spacing is driven by grid spans; internal spacing stays consistent */
-  --match-gap: 0.6rem;
+  /*
+    ✅ Dynamic internal spacing that grows by round.
+    This keeps first-round matches compact, while later rounds open up so
+    the winner anchors (w#) sit exactly between their source matches.
+  */
+  --match-gap: calc(0.6rem + (3.0rem * var(--round-depth)));
 }
 
 .round h2 {
@@ -87,8 +91,15 @@
   /* ✅ important: make the match fill its grid span */
   height: 100%;
 
-  /* Put the two teams at the top & bottom of the grid span (classic bracket look). */
-  justify-content: space-between;
+  /*
+    ✅ Center the two teams within the grid span.
+    This produces consistent “bracket geometry” across rounds and makes
+    the line elbows land where users expect.
+  */
+  justify-content: center;
+
+  /* reactive spacing between the two teams within a match */
+  gap: var(--match-gap);
 
   /* Needed for absolutely-positioned winner anchor */
   position: relative;

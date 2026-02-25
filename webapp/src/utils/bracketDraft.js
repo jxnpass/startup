@@ -10,7 +10,7 @@ import {
 import { saveProgress } from "./bracketProgress.js";
 
 export const TEAM_COUNT_MIN = 2;
-export const TEAM_COUNT_MAX = 8;
+export const TEAM_COUNT_MAX = 16;
 
 export function createDefaultDraft() {
   return {

@@ -42,91 +42,74 @@ function connect(svg, a, b) {
 function el(id) {
   return document.getElementById(id);
 }
-function exists(id) {
-  return !!el(id);
-}
 
-function sizeFromDOM() {
-  if (exists("t16")) return 16;
-  if (exists("t8")) return 8;
-  if (exists("t4")) return 4;
-  if (exists("t2")) return 2;
+function inferSizeFromDOM() {
+  // Prefer match ids because team ids can be absent (winner placeholders)
+  // and BYEs can remove some team boxes.
+  if (el("m15")) return 16;
+  if (el("m7")) return 8;
+  if (el("m3")) return 4;
+  if (el("m1") && el("m16")) return 2;
   return 0;
 }
 
 function connectionPairsForSize(size) {
-  // ✅ Connect TEAM boxes -> WINNER slots, not match containers.
-  // This keeps lines attached even when match layout changes.
+  // ✅ Connect MATCH containers to the NEXT ROUND match containers.
+  // This makes elbows meet at the visual midpoint of each matchup,
+  // regardless of BYEs or internal match spacing.
 
   if (size === 16) {
-    const pairs = [
-      // Round of 16 -> Round of 8
-      ["t1", "w1"], ["t16", "w1"],
-      ["t8", "w2"], ["t9", "w2"],
-      ["t4", "w3"], ["t13", "w3"],
-      ["t5", "w4"], ["t12", "w4"],
-      ["t2", "w5"], ["t15", "w5"],
-      ["t7", "w6"], ["t10", "w6"],
-      ["t3", "w7"], ["t14", "w7"],
-      ["t6", "w8"], ["t11", "w8"],
+    return [
+      // R1 (m1..m8) -> R2 (m9..m12)
+      ["m1", "m9"], ["m2", "m9"],
+      ["m3", "m10"], ["m4", "m10"],
+      ["m5", "m11"], ["m6", "m11"],
+      ["m7", "m12"], ["m8", "m12"],
 
-      // Round of 8 -> Semis
-      ["w1", "w9"], ["w2", "w9"],
-      ["w3", "w10"], ["w4", "w10"],
-      ["w5", "w11"], ["w6", "w11"],
-      ["w7", "w12"], ["w8", "w12"],
+      // R2 (m9..m12) -> R3 (m13..m14)
+      ["m9", "m13"], ["m10", "m13"],
+      ["m11", "m14"], ["m12", "m14"],
 
-      // Semis -> Final
-      ["w9", "w13"], ["w10", "w13"],
-      ["w11", "w14"], ["w12", "w14"],
+      // R3 -> Final (m15)
+      ["m13", "m15"], ["m14", "m15"],
 
       // Final -> Champion
-      ["w13", "m16"], ["w14", "m16"],
+      ["m15", "m16"],
     ];
-    return pairs;
   }
 
   if (size === 8) {
     return [
-      // Round of 8 -> Semis
-      ["t1", "w1"], ["t8", "w1"],
-      ["t4", "w2"], ["t5", "w2"],
-      ["t3", "w3"], ["t6", "w3"],
-      ["t2", "w4"], ["t7", "w4"],
+      // R1 (m1..m4) -> Semis (m5..m6)
+      ["m1", "m5"], ["m2", "m5"],
+      ["m3", "m6"], ["m4", "m6"],
 
-      // Semis -> Final
-      ["w1", "w5"], ["w2", "w5"],
-      ["w3", "w6"], ["w4", "w6"],
+      // Semis -> Final (m7)
+      ["m5", "m7"], ["m6", "m7"],
 
       // Final -> Champion
-      ["w5", "w7"], ["w6", "w7"],
-      ["w7", "m16"],
+      ["m7", "m16"],
     ];
   }
 
   if (size === 4) {
     return [
-      // Semis
-      ["t1", "w1"], ["t4", "w1"],
-      ["t2", "w2"], ["t3", "w2"],
+      // Semis (m1..m2) -> Final (m3)
+      ["m1", "m3"], ["m2", "m3"],
 
       // Final -> Champion
-      ["w1", "w3"], ["w2", "w3"],
-      ["w3", "m16"],
+      ["m3", "m16"],
     ];
   }
 
   if (size === 2) {
-    return [
-      ["t1", "w1"], ["t2", "w1"],
-      ["w1", "m16"],
-    ];
+    return [["m1", "m16"]];
   }
 
   return [];
 }
 
-export function drawAllConnections() {
+export function drawAllConnections(sizeHint = 0) {
   const svg = el("bracket-lines");
   const bracket = document.querySelector(".bracket");
   if (!svg || !bracket) return;
@@ -143,7 +126,7 @@ export function drawAllConnections() {
   svg.style.top = "0";
   svg.style.pointerEvents = "none";
 
-  const size = sizeFromDOM();
+  const size = sizeHint || inferSizeFromDOM();
   const pairs = connectionPairsForSize(size);
 
   for (const [aId, bId] of pairs) {
