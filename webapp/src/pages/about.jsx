@@ -12,7 +12,7 @@ export default function About() {
         setFact(data.text);
       })
       .catch(() => {
-        setFact('Unable to load a useless fact.');
+        setFact('Jackson likes volleyball.');
       });
   }, []);
 
