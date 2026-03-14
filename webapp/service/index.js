@@ -202,49 +202,9 @@ function getXmlTagValue(xml, tagName) {
   return decodeXmlEntities(match?.[1] || '').trim();
 }
 
-app.get('/api/quote', async (_req, res) => {
-  try {
-    const params = new URLSearchParams({
-      method: 'getQuote',
-      format: 'xml',
-      lang: 'en',
-      key: String(Math.floor(Math.random() * 999999)),
-    });
-
-    const response = await fetch(`http://api.forismatic.com/api/1.0/?${params.toString()}`);
-    if (!response.ok) {
-      throw new Error('Quote service unavailable');
-    }
-
-    const xml = await response.text();
-    const content = getXmlTagValue(xml, 'quoteText') || 'Competition reveals character.';
-    const author = getXmlTagValue(xml, 'quoteAuthor') || 'Unknown';
-    const senderName = getXmlTagValue(xml, 'senderName');
-    const senderLink = getXmlTagValue(xml, 'senderLink');
-
-    return res.send({
-      content,
-      author,
-      source: 'Forismatic',
-      senderName,
-      senderLink,
-    });
-  } catch {
-    return res.send({
-      content: 'Competition reveals character.',
-      author: 'Unknown',
-      source: 'Forismatic',
-      senderName: '',
-      senderLink: '',
-    });
-  }
-});
-
 app.get('/api/health', (_req, res) => {
   return res.send({ ok: true });
 });
-
-app.use(express.static('public'));
 
 app.get(/^\/api\/.*/, (_req, res) => {
   return res.status(404).send({ message: 'Not found' });
