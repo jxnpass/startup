@@ -46,6 +46,10 @@ scp -r -i "$key" build/* ubuntu@$hostname:services/$service
 # Step 4
 printf "\n----> Deploy the service on the target\n"
 ssh -i "$key" ubuntu@$hostname << ENDSSH
+export NVM_DIR="\$HOME/.nvm"
+[ -s "\$NVM_DIR/nvm.sh" ] && . "\$NVM_DIR/nvm.sh"
+nvm use node >/dev/null 2>&1 || true
+
 cd services/${service}
 npm install --omit=dev
 
