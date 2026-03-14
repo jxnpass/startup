@@ -163,3 +163,48 @@
     gap: 0.5rem;
   }
 }
+
+
+.page-create .share-link-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.page-create .share-link-row input {
+  flex: 1;
+}
+
+.page-create .secondary-action-btn {
+  padding: 0.7rem 1rem;
+  background-color: #f0f0ff;
+  color: #2a2a94;
+  border: 1px solid #4169E1;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.page-create .secondary-action-btn:hover {
+  background-color: #dfe7ff;
+}
+
+.page-create .sharing-help-text {
+  margin-top: 0.4rem;
+  color: #555c7a;
+  line-height: 1.4;
+}
+
+.page-create .copy-message {
+  margin-top: 0.5rem;
+  color: #2a2a94;
+  font-weight: 600;
+}
+
+@media (max-width: 500px) {
+  .page-create .share-link-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

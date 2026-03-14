@@ -48,7 +48,24 @@ export function normalizeDraft(raw) {
   const roundCountNum = Number(raw?.roundCount);
   const roundCount = Math.max(1, Math.floor(roundCountNum || 1));
 
-  return { bracketName, bracketDesc, type, teamCount, teamNames, mode, roundCount };
+  const rawSharing = raw?.sharing ?? {};
+  const normalizeAccess = (value) =>
+    value === "private" || value === "public" ? value : "personal";
+  const collaboratorEmails = Array.isArray(rawSharing?.collaboratorEmails)
+    ? rawSharing.collaboratorEmails
+        .map((email) => (email ?? "").toString().trim())
+        .filter(Boolean)
+    : [];
+  const shareLink = (rawSharing?.shareLink ?? "").toString().trim();
+
+  const sharing = {
+    editAccess: normalizeAccess(rawSharing?.editAccess),
+    viewAccess: normalizeAccess(rawSharing?.viewAccess),
+    collaboratorEmails,
+    shareLink,
+  };
+
+  return { bracketName, bracketDesc, type, teamCount, teamNames, mode, roundCount, sharing };
 }
 
 function roundTitle(size, roundIdx) {

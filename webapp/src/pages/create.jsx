@@ -11,6 +11,13 @@ import {
 } from "../utils/bracketLibrary.js";
 import { saveProgress } from "../utils/bracketProgress.js";
 
+function parseEmails(raw) {
+  return raw
+    .split(/[\n,;]+/)
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
+
 export default function Create() {
   const navigate = useNavigate();
 
@@ -23,6 +30,12 @@ export default function Create() {
   const [bracketDesc, setBracketDesc] = useState("");
   const [teamNames, setTeamNames] = useState(["Team 1", "Team 2"]);
 
+  const [editAccess, setEditAccess] = useState("personal");
+  const [viewAccess, setViewAccess] = useState("personal");
+  const [collaboratorEmails, setCollaboratorEmails] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
+  const [pendingBracketId] = useState(() => generateBracketId());
+
   useEffect(() => {
     setTeamNames((prev) => {
       const next = [...prev];
@@ -31,10 +44,31 @@ export default function Create() {
     });
   }, [teamCount]);
 
+  useEffect(() => {
+    if (copyMessage) {
+      const timer = window.setTimeout(() => setCopyMessage(""), 1800);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
+  }, [copyMessage]);
+
   const teams = useMemo(
     () => Array.from({ length: teamCount }, (_, i) => ({ id: i + 1 })),
     [teamCount]
   );
+
+  const needsPrivateEmails = editAccess === "private" || viewAccess === "private";
+  const hasPublicAccess = editAccess === "public" || viewAccess === "public";
+  const shareLink = `${window.location.origin}/bracket/${pendingBracketId}`;
+
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setCopyMessage("Link copied.");
+    } catch {
+      setCopyMessage("Could not copy automatically. You can copy the link manually.");
+    }
+  }
 
   return (
     <div className="page page-create">
@@ -52,9 +86,15 @@ export default function Create() {
             teamNames,
             mode,
             roundCount,
+            sharing: {
+              editAccess,
+              viewAccess,
+              collaboratorEmails: parseEmails(collaboratorEmails),
+              shareLink,
+            },
           });
 
-          const id = generateBracketId();
+          const id = pendingBracketId;
           localStorage.setItem(draftKeyFor(id), JSON.stringify(draft));
           saveProgress({ scores: {}, sig: {} }, progressKeyFor(id));
 
@@ -65,6 +105,7 @@ export default function Create() {
             teamCount: draft.teamCount,
             type: draft.type,
             mode: draft.mode,
+            sharing: draft.sharing,
           });
 
           navigate(`/bracket/${id}`);
@@ -189,12 +230,107 @@ export default function Create() {
             </li>
           )}
 
-          <h4> Sharing Options </h4>
+          <h4>Sharing Options</h4>
 
-          ...
-          
+          <li>
+            <label>Public editing enabled:</label>
+            <fieldset className="button-group">
+              <input
+                type="radio"
+                id="edit-personal"
+                name="editAccess"
+                checked={editAccess === "personal"}
+                onChange={() => setEditAccess("personal")}
+              />
+              <label htmlFor="edit-personal">Personal</label>
 
+              <input
+                type="radio"
+                id="edit-private"
+                name="editAccess"
+                checked={editAccess === "private"}
+                onChange={() => setEditAccess("private")}
+              />
+              <label htmlFor="edit-private">Private</label>
 
+              <input
+                type="radio"
+                id="edit-public"
+                name="editAccess"
+                checked={editAccess === "public"}
+                onChange={() => setEditAccess("public")}
+              />
+              <label htmlFor="edit-public">Public</label>
+            </fieldset>
+          </li>
+
+          <li>
+            <label>Public viewing enabled:</label>
+            <fieldset className="button-group">
+              <input
+                type="radio"
+                id="view-personal"
+                name="viewAccess"
+                checked={viewAccess === "personal"}
+                onChange={() => setViewAccess("personal")}
+              />
+              <label htmlFor="view-personal">Personal</label>
+
+              <input
+                type="radio"
+                id="view-private"
+                name="viewAccess"
+                checked={viewAccess === "private"}
+                onChange={() => setViewAccess("private")}
+              />
+              <label htmlFor="view-private">Private</label>
+
+              <input
+                type="radio"
+                id="view-public"
+                name="viewAccess"
+                checked={viewAccess === "public"}
+                onChange={() => setViewAccess("public")}
+              />
+              <label htmlFor="view-public">Public</label>
+            </fieldset>
+          </li>
+
+          {needsPrivateEmails && (
+            <li>
+              <label htmlFor="collaboratorEmails">Collaborator emails:</label>
+              <textarea
+                id="collaboratorEmails"
+                placeholder="Enter emails separated by commas, semicolons, or new lines"
+                value={collaboratorEmails}
+                onChange={(e) => setCollaboratorEmails(e.target.value)}
+              />
+              <small className="sharing-help-text">
+                These users can be invited later when email-based collaboration is implemented.
+              </small>
+            </li>
+          )}
+
+          {hasPublicAccess && (
+            <li>
+              <label htmlFor="publicShareLink">Public share link:</label>
+              <div className="share-link-row">
+                <input
+                  type="text"
+                  id="publicShareLink"
+                  value={shareLink}
+                  readOnly
+                />
+                <button type="button" className="secondary-action-btn" onClick={copyShareLink}>
+                  Copy
+                </button>
+              </div>
+              <small className="sharing-help-text">
+                This preview link will work after the bracket is created.
+              </small>
+              {copyMessage ? <div className="copy-message">{copyMessage}</div> : null}
+            </li>
+          )}
         </ul>
 
         <button type="submit">Create</button>
