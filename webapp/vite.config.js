@@ -1,13 +1,12 @@
-const { defineConfig } = require('vite');
+import { defineConfig } from 'vite';
 
-module.exports = defineConfig({
+export default defineConfig({
   server: {
     proxy: {
       '/api': 'http://localhost:4000',
     },
   },
   build: {
-    outDir: 'service/public',
-    emptyOutDir: true,
+    outDir: 'dist',
   },
 });
