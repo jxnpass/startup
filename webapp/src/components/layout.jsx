@@ -1,9 +1,19 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { useUsername } from '../utils/userSession.js';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useUsername, clearUsername } from '../utils/userSession.js';
+import { logoutUser } from '../utils/auth.js';
 
 export default function Layout() {
   const username = useUsername();
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } catch {}
+    clearUsername();
+    navigate('/');
+  }
 
   return (
     <div className="app-shell">
@@ -27,9 +37,16 @@ export default function Layout() {
           </NavLink>
         </nav>
 
-        <span className="header-user">
-          Username: {username ? username : 'Guest'}
-        </span>
+        <div className="header-userBox">
+          <span className="header-user">
+            Username: {username ? username : 'Guest'}
+          </span>
+          {username ? (
+            <button type="button" className="header-logout" onClick={handleLogout}>
+              Logout
+            </button>
+          ) : null}
+        </div>
       </header>
 
       <main className="site-main">

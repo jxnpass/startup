@@ -116,3 +116,24 @@ body {
   width: 100%;
   max-width: 1100px;
 }
+
+
+.header-userBox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logout {
+  border: 1px solid #F8F8FF;
+  background: transparent;
+  color: #F8F8FF;
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.header-logout:hover {
+  background: #F8F8FF;
+  color: #2a2a94;
+}

@@ -1,20 +1,34 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { setUsername } from "../utils/userSession.js";
-import "../styles/login.css";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { setUsername } from '../utils/userSession.js';
+import { loginUser, registerUser, getProtectedMessage } from '../utils/auth.js';
+import '../styles/login.css';
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function normalizeUsername(value) {
-    const trimmed = (value || "").trim();
-    if (!trimmed) return "";
-    // If it's an email, use the part before @ for display
-    if (trimmed.includes("@")) return trimmed.split("@")[0];
-    return trimmed;
+  async function handleAuth(mode) {
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const action = mode === 'register' ? registerUser : loginUser;
+      const data = await action(email, password);
+      setUsername(data.user.username || '');
+
+      const restricted = await getProtectedMessage();
+      setMessage(restricted.message);
+      navigate('/list');
+    } catch (error) {
+      setMessage(error.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -32,11 +46,7 @@ export default function Login() {
           className="login-form"
           onSubmit={(e) => {
             e.preventDefault();
-
-            const username = normalizeUsername(email);
-            setUsername(username);
-
-            navigate("/list");
+            handleAuth('login');
           }}
         >
           <div className="login-inputRow">
@@ -47,6 +57,7 @@ export default function Login() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 
@@ -58,16 +69,25 @@ export default function Login() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              minLength={6}
+              required
             />
           </div>
 
           <div className="login-actions">
-            <button type="submit">Login</button>
-            <button type="button" onClick={() => {
-              const username = normalizeUsername(email); setUsername(username); navigate("/create");}}>
-              Sign Up
+            <button type="submit" disabled={loading}>
+              {loading ? 'Working...' : 'Login'}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => handleAuth('register')}
+            >
+              {loading ? 'Working...' : 'Sign Up'}
             </button>
           </div>
+
+          {message ? <p className="login-message">{message}</p> : null}
         </form>
       </div>
     </div>

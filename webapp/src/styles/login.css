@@ -74,3 +74,15 @@
   background-color: #2a2a94;
   color: #ffffff;
 }
+
+.login-message {
+  margin: 0;
+  text-align: center;
+  color: #2a2a94;
+  font-size: 0.95rem;
+}
+
+.login-actions button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
