@@ -1,7 +1,21 @@
-import React from "react";
-import "../styles/about.css";
+import React, { useEffect, useState } from 'react';
+import '../styles/about.css';
+
 
 export default function About() {
+  const [fact, setFact] = useState('Loading useless fact...');
+
+  useEffect(() => {
+    fetch('https://uselessfacts.jsph.pl/api/v2/facts/random')
+      .then((response) => response.json())
+      .then((data) => {
+        setFact(data.text);
+      })
+      .catch(() => {
+        setFact('Unable to load a useless fact.');
+      });
+  }, []);
+
   return (
     <div className="page page-about">
       <p className="about-text">
@@ -25,9 +39,9 @@ export default function About() {
         <div className="col-md-6">
           <div id="quote">
             <div>
-              <b>I like volleyball</b>
+              <b>{fact}</b>
             </div>
-            <div>- Jackson</div>
+            <div className="quote-source">Powered by Useless Facts</div>
           </div>
         </div>
       </div>

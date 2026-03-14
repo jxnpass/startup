@@ -1,18 +1,12 @@
 {
   "users": [
     {
-      "id": "f60b5a7d-477f-407a-84d3-dfcb4c55785b",
+      "id": "e84a70c9-d909-4c8e-9e39-f46dbbb3560e",
       "email": "jxn@gmail.com",
       "username": "jxn",
-      "passwordHash": "$2b$10$ZCYdYKesENDo5EAaK4ObG.69.9qnrzbjwy1xXHAp2r.PMCXEIR2EC",
-      "createdAt": "2026-03-13T18:26:29.453Z"
+      "passwordHash": "$2b$10$cWV/7y88QUSlenJEH1zAOO3BDd1bPzi4xhNgGfX2kiLpoX80eJZmG",
+      "createdAt": "2026-03-14T05:00:49.476Z"
     }
   ],
-  "sessions": [
-    {
-      "token": "a603c921-539e-4f77-9563-b46aa87b1d47",
-      "userId": "f60b5a7d-477f-407a-84d3-dfcb4c55785b",
-      "createdAt": "2026-03-13T18:26:52.307Z"
-    }
-  ]
+  "sessions": []
 }

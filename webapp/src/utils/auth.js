@@ -24,7 +24,7 @@ async function request(path, options = {}) {
 }
 
 export async function registerUser(email, password) {
-  return request('/api/auth/register', {
+  return request('/api/auth/create', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
@@ -50,3 +50,4 @@ export async function getCurrentUser() {
 export async function getProtectedMessage() {
   return request('/api/protected');
 }
+

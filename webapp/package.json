@@ -2,14 +2,14 @@
   "name": "webapp",
   "version": "1.0.0",
   "description": "Bracket Builder with Express auth service",
-  "main": "server/index.js",
+  "main": "service/index.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "node server/index.js",
-    "server": "node server/index.js"
+    "dev": "node node_modules/vite/dist/node/cli.js",
+    "build": "node node_modules/vite/dist/node/cli.js build",
+    "preview": "node node_modules/vite/dist/node/cli.js preview",
+    "start": "cd service && node index.js 4000",
+    "service": "cd service && node index.js 4000"
   },
   "keywords": [],
   "author": "",

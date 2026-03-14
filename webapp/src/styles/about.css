@@ -69,3 +69,9 @@
   text-align: right;
   color: #4169e1;
 }
+
+.quote-source {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
