@@ -86,7 +86,36 @@ function computeStatus(draft, progress) {
     return { label: "Finished", tone: "finished" };
   }
 
-  // Single elimination
+  // Elimination brackets
+  if (vm.kind === "double") {
+    const allRounds = [...(vm.de?.winners || []), ...(vm.de?.losers || []), ...(vm.de?.finals || [])];
+
+    const roundComplete = (round) => {
+      const matches = round?.matches || [];
+      if (matches.length === 0) return true;
+      return matches.every((m) => {
+        const a = m?.teams?.[0];
+        const b = m?.teams?.[1];
+        const av = scoreFor(m.matchId, a?.id);
+        const bv = scoreFor(m.matchId, b?.id);
+        return isFilled(av) && isFilled(bv);
+      });
+    };
+
+    for (const r of allRounds) {
+      if (!roundComplete(r)) return { label: r.title, tone: "progress" };
+    }
+
+    const gf = vm.de?.finals?.[vm.de.finals.length - 1]?.matches?.[0];
+    if (!gf) return { label: "Finished", tone: "finished" };
+    const aRaw = scoreFor(gf.matchId, gf.teams?.[0]?.id);
+    const bRaw = scoreFor(gf.matchId, gf.teams?.[1]?.id);
+    const aNum = isFilled(aRaw) ? Number(aRaw) : NaN;
+    const bNum = isFilled(bRaw) ? Number(bRaw) : NaN;
+    const hasWinner = Number.isFinite(aNum) && Number.isFinite(bNum) && aNum !== bNum;
+    return hasWinner ? { label: "Finished", tone: "finished" } : { label: "Grand Final", tone: "progress" };
+  }
+
   const se = vm.se;
   const rounds = (se?.rounds || []).filter((r) => r.roundId !== "round_champion");
 
@@ -147,7 +176,11 @@ export default function List() {
       const mode = draft?.mode ?? b.mode ?? "";
 
       const typeLabel =
-        type === "roundrobin" ? "Round Robin" : `Single Elimination${mode ? ` • ${mode}` : ""}`;
+        type === "roundrobin"
+          ? "Round Robin"
+          : type === "double"
+          ? `Double Elimination${mode ? ` • ${mode}` : ""}`
+          : `Single Elimination${mode ? ` • ${mode}` : ""}`;
 
       const status = computeStatus(draft, progress);
 

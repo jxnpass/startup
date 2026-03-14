@@ -32,9 +32,10 @@ function seedOrderFor(size) {
 export function normalizeDraft(raw) {
   const bracketName = (raw?.bracketName ?? "").toString().trim() || "Untitled Bracket";
   const bracketDesc = (raw?.bracketDesc ?? "").toString().trim();
-  const type = raw?.type === "roundrobin" ? "roundrobin" : "single";
+  const type = raw?.type === "roundrobin" ? "roundrobin" : raw?.type === "double" ? "double" : "single";
 
-  const teamCount = clampInt(Number(raw?.teamCount), 2, 16);
+  const teamCountMax = type === "double" ? 8 : 16;
+  const teamCount = clampInt(Number(raw?.teamCount), 2, teamCountMax);
 
   const inputNames = Array.isArray(raw?.teamNames) ? raw.teamNames : [];
   const teamNames = Array.from({ length: teamCount }, (_, i) => {
@@ -69,7 +70,6 @@ export function normalizeDraft(raw) {
 }
 
 function roundTitle(size, roundIdx) {
-  // for size=16: roundIdx0=Round of 8, 1=Semifinals, 2=Final
   const teamsThisRound = size / Math.pow(2, roundIdx);
   if (teamsThisRound === 2) return "Final";
   if (teamsThisRound === 4) return "Semifinals";
@@ -78,8 +78,8 @@ function roundTitle(size, roundIdx) {
   return `Round of ${teamsThisRound}`;
 }
 
-function buildSingleElim(teamNames, mode) {
-  const size = nextPow2(teamNames.length);
+function orderedSlots(teamNames, mode, maxSize = 16) {
+  const size = Math.min(nextPow2(teamNames.length), maxSize);
   let slots = [...teamNames];
   while (slots.length < size) slots.push("BYE");
 
@@ -90,18 +90,20 @@ function buildSingleElim(teamNames, mode) {
     slots = order.map((seed) => slots[seed - 1] ?? "BYE");
   }
 
-  const gridRows = size * 2;
+  return { size, slots };
+}
 
-  // First round: teams get ids t1..t<size>
+function buildSingleElim(teamNames, mode) {
+  const { size, slots } = orderedSlots(teamNames, mode, 16);
+  const gridRows = size * 2;
   const firstRoundTeams = slots.map((name, i) => ({ id: `t${i + 1}`, name }));
 
   const rounds = [];
   let matchCounter = 1;
   let winnerCounter = 1;
 
-  // Build rounds iteratively
   let current = [];
-  let span = 4; // first-round match span
+  let span = 4;
   for (let i = 0; i < size / 2; i++) {
     const a = firstRoundTeams[i * 2];
     const b = firstRoundTeams[i * 2 + 1];
@@ -164,7 +166,6 @@ function buildSingleElim(teamNames, mode) {
     depth += 1;
   }
 
-  // Champion column uses id m16 (your lines code expects it)
   const finalWinnerId = current[0]?.winnerId ?? "w1";
   rounds.push({
     roundId: "round_champion",
@@ -177,6 +178,149 @@ function buildSingleElim(teamNames, mode) {
   return { size, gridRows, rounds, slots };
 }
 
+function teamSource(teamId) {
+  return { type: "team", teamId };
+}
+
+function winnerSource(matchId) {
+  return { type: "winner", matchId };
+}
+
+function loserSource(matchId) {
+  return { type: "loser", matchId };
+}
+
+function makeDeMatch(matchId, sourceA, sourceB) {
+  return {
+    matchId,
+    teams: [
+      { id: `${matchId}_a`, source: sourceA },
+      { id: `${matchId}_b`, source: sourceB },
+    ],
+  };
+}
+
+function buildDoubleElim(teamNames, mode) {
+  const { size, slots } = orderedSlots(teamNames, mode, 8);
+  const slotTeamIds = slots.map((_, i) => `t${i + 1}`);
+  const teamById = Object.fromEntries(slotTeamIds.map((id, i) => [id, slots[i]]));
+
+  const winners = [];
+  const losers = [];
+  const finals = [];
+
+  if (size === 2) {
+    winners.push({
+      roundId: "wb_r1",
+      title: "Winners Final",
+      matches: [makeDeMatch("wb_r1_m1", teamSource("t1"), teamSource("t2"))],
+    });
+
+    finals.push({
+      roundId: "gf_r1",
+      title: "Grand Final",
+      matches: [makeDeMatch("gf_r1_m1", winnerSource("wb_r1_m1"), loserSource("wb_r1_m1"))],
+    });
+  } else if (size === 4) {
+    winners.push({
+      roundId: "wb_r1",
+      title: "Winners Round 1",
+      matches: [
+        makeDeMatch("wb_r1_m1", teamSource("t1"), teamSource("t2")),
+        makeDeMatch("wb_r1_m2", teamSource("t3"), teamSource("t4")),
+      ],
+    });
+
+    winners.push({
+      roundId: "wb_r2",
+      title: "Winners Final",
+      matches: [makeDeMatch("wb_r2_m1", winnerSource("wb_r1_m1"), winnerSource("wb_r1_m2"))],
+    });
+
+    losers.push({
+      roundId: "lb_r1",
+      title: "Losers Round 1",
+      matches: [makeDeMatch("lb_r1_m1", loserSource("wb_r1_m1"), loserSource("wb_r1_m2"))],
+    });
+
+    losers.push({
+      roundId: "lb_r2",
+      title: "Losers Final",
+      matches: [makeDeMatch("lb_r2_m1", winnerSource("lb_r1_m1"), loserSource("wb_r2_m1"))],
+    });
+
+    finals.push({
+      roundId: "gf_r1",
+      title: "Grand Final",
+      matches: [makeDeMatch("gf_r1_m1", winnerSource("wb_r2_m1"), winnerSource("lb_r2_m1"))],
+    });
+  } else {
+    winners.push({
+      roundId: "wb_r1",
+      title: "Winners Round 1",
+      matches: [
+        makeDeMatch("wb_r1_m1", teamSource("t1"), teamSource("t2")),
+        makeDeMatch("wb_r1_m2", teamSource("t3"), teamSource("t4")),
+        makeDeMatch("wb_r1_m3", teamSource("t5"), teamSource("t6")),
+        makeDeMatch("wb_r1_m4", teamSource("t7"), teamSource("t8")),
+      ],
+    });
+
+    winners.push({
+      roundId: "wb_r2",
+      title: "Winners Semifinals",
+      matches: [
+        makeDeMatch("wb_r2_m1", winnerSource("wb_r1_m1"), winnerSource("wb_r1_m2")),
+        makeDeMatch("wb_r2_m2", winnerSource("wb_r1_m3"), winnerSource("wb_r1_m4")),
+      ],
+    });
+
+    winners.push({
+      roundId: "wb_r3",
+      title: "Winners Final",
+      matches: [makeDeMatch("wb_r3_m1", winnerSource("wb_r2_m1"), winnerSource("wb_r2_m2"))],
+    });
+
+    losers.push({
+      roundId: "lb_r1",
+      title: "Losers Round 1",
+      matches: [
+        makeDeMatch("lb_r1_m1", loserSource("wb_r1_m1"), loserSource("wb_r1_m2")),
+        makeDeMatch("lb_r1_m2", loserSource("wb_r1_m3"), loserSource("wb_r1_m4")),
+      ],
+    });
+
+    losers.push({
+      roundId: "lb_r2",
+      title: "Losers Round 2",
+      matches: [
+        makeDeMatch("lb_r2_m1", winnerSource("lb_r1_m1"), loserSource("wb_r2_m1")),
+        makeDeMatch("lb_r2_m2", winnerSource("lb_r1_m2"), loserSource("wb_r2_m2")),
+      ],
+    });
+
+    losers.push({
+      roundId: "lb_r3",
+      title: "Losers Semifinal",
+      matches: [makeDeMatch("lb_r3_m1", winnerSource("lb_r2_m1"), winnerSource("lb_r2_m2"))],
+    });
+
+    losers.push({
+      roundId: "lb_r4",
+      title: "Losers Final",
+      matches: [makeDeMatch("lb_r4_m1", winnerSource("lb_r3_m1"), loserSource("wb_r3_m1"))],
+    });
+
+    finals.push({
+      roundId: "gf_r1",
+      title: "Grand Final",
+      matches: [makeDeMatch("gf_r1_m1", winnerSource("wb_r3_m1"), winnerSource("lb_r4_m1"))],
+    });
+  }
+
+  return { size, slots, teamById, winners, losers, finals };
+}
+
 export function buildBracketViewModel(rawDraft) {
   const meta = normalizeDraft(rawDraft);
 
@@ -186,6 +330,11 @@ export function buildBracketViewModel(rawDraft) {
     const rounds = buildRoundRobinSchedule(teamIds, meta.roundCount);
 
     return { meta, kind: "roundrobin", rr: { teamIds, teamById, rounds } };
+  }
+
+  if (meta.type === "double") {
+    const de = buildDoubleElim(meta.teamNames, meta.mode);
+    return { meta, kind: "double", de };
   }
 
   const se = buildSingleElim(meta.teamNames, meta.mode);

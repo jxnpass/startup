@@ -264,3 +264,69 @@
     min-width: 260px;
   }
 }
+
+/* ---------------- DOUBLE ELIMINATION ---------------- */
+
+.de-page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.de-section,
+.de-champion-card {
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.de-section-title {
+  text-align: center;
+  color: #4169e1;
+  margin: 0 0 1rem;
+}
+
+.de-grid {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.de-round {
+  min-width: 290px;
+}
+
+.de-round h3 {
+  text-align: center;
+  color: #4169e1;
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.de-round-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.de-match {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.de-champion-card h2 {
+  text-align: center;
+  color: #4169e1;
+  margin: 0 0 1rem;
+}
+
+.champion-team {
+  max-width: 360px;
+  margin: 0 auto;
+}

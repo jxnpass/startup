@@ -21,7 +21,7 @@ function parseEmails(raw) {
 export default function Create() {
   const navigate = useNavigate();
 
-  const [type, setType] = useState("single"); // single | roundrobin
+  const [type, setType] = useState("single"); // single | double | roundrobin
   const [teamCount, setTeamCount] = useState(2);
   const [mode, setMode] = useState("seeded"); // seeded | random (single only)
   const [roundCount, setRoundCount] = useState(1);
@@ -52,10 +52,16 @@ export default function Create() {
     return undefined;
   }, [copyMessage]);
 
+  const maxTeams = type === "double" ? 8 : 16;
+
   const teams = useMemo(
     () => Array.from({ length: teamCount }, (_, i) => ({ id: i + 1 })),
     [teamCount]
   );
+
+  useEffect(() => {
+    setTeamCount((prev) => Math.min(prev, maxTeams));
+  }, [maxTeams]);
 
   const needsPrivateEmails = editAccess === "private" || viewAccess === "private";
   const hasPublicAccess = editAccess === "public" || viewAccess === "public";
@@ -148,6 +154,15 @@ export default function Create() {
 
               <input
                 type="radio"
+                id="double"
+                name="bracketType"
+                checked={type === "double"}
+                onChange={() => setType("double")}
+              />
+              <label htmlFor="double">Double Elimination</label>
+
+              <input
+                type="radio"
                 id="roundrobin"
                 name="bracketType"
                 checked={type === "roundrobin"}
@@ -205,7 +220,7 @@ export default function Create() {
             </div>
           </li>
 
-          {type === "single" && (
+          {(type === "single" || type === "double") && (
             <li>
               <label>Seeding:</label>
               <fieldset className="button-group">

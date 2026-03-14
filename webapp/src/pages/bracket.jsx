@@ -34,6 +34,103 @@ function isByeName(name) {
   return (name ?? "").toString().toUpperCase() === "BYE";
 }
 
+function safeClone(p) {
+  return {
+    scores: JSON.parse(JSON.stringify(p?.scores || {})),
+    sig: JSON.parse(JSON.stringify(p?.sig || {})),
+  };
+}
+
+function rawStable(obj) {
+  return JSON.stringify(obj);
+}
+
+function buildDoubleResolver(de, progress) {
+  const matchById = {};
+  for (const section of [de.winners, de.losers, de.finals]) {
+    for (const round of section) {
+      for (const match of round.matches) {
+        matchById[match.matchId] = match;
+      }
+    }
+  }
+
+  function getScore(matchId, slotId) {
+    const v = progress?.scores?.[matchId]?.[slotId];
+    return v == null ? "" : v;
+  }
+
+  function resolveName(source) {
+    if (!source) return "TBD";
+    if (source.type === "team") return de.teamById[source.teamId] ?? "Team";
+
+    const match = matchById[source.matchId];
+    if (!match) return source.type === "winner" ? "Winner" : "Loser";
+
+    const winnerSlot = computeWinnerSlot(match);
+    const loserSlot = computeLoserSlot(match);
+    const slotId = source.type === "winner" ? winnerSlot : loserSlot;
+    if (!slotId) return source.type === "winner" ? "Winner" : "Loser";
+
+    const slot = match.teams.find((team) => team.id === slotId);
+    return slot ? resolveName(slot.source) : "TBD";
+  }
+
+  function resolveSig(source) {
+    if (!source) return "";
+    if (source.type === "team") return source.teamId;
+
+    const match = matchById[source.matchId];
+    if (!match) return "";
+
+    const winnerSlot = computeWinnerSlot(match);
+    const loserSlot = computeLoserSlot(match);
+    const slotId = source.type === "winner" ? winnerSlot : loserSlot;
+    if (!slotId) return "";
+
+    const slot = match.teams.find((team) => team.id === slotId);
+    return slot ? resolveSig(slot.source) : "";
+  }
+
+  function computeWinnerSlot(match) {
+    const [A, B] = match.teams;
+    const aName = resolveName(A.source);
+    const bName = resolveName(B.source);
+
+    if (isByeName(aName) && !isByeName(bName)) return B.id;
+    if (isByeName(bName) && !isByeName(aName)) return A.id;
+    if (isByeName(aName) && isByeName(bName)) return A.id;
+
+    const aRaw = getScore(match.matchId, A.id);
+    const bRaw = getScore(match.matchId, B.id);
+    const a = aRaw === "" ? null : Number(aRaw);
+    const b = bRaw === "" ? null : Number(bRaw);
+
+    const aOk = typeof a === "number" && Number.isFinite(a);
+    const bOk = typeof b === "number" && Number.isFinite(b);
+    if (!aOk || !bOk) return null;
+    if (a > b) return A.id;
+    if (b > a) return B.id;
+    return null;
+  }
+
+  function computeLoserSlot(match) {
+    const [A, B] = match.teams;
+    const aName = resolveName(A.source);
+    const bName = resolveName(B.source);
+
+    if (isByeName(aName) && !isByeName(bName)) return A.id;
+    if (isByeName(bName) && !isByeName(aName)) return B.id;
+    if (isByeName(aName) && isByeName(bName)) return B.id;
+
+    const winner = computeWinnerSlot(match);
+    if (!winner) return null;
+    return winner === A.id ? B.id : A.id;
+  }
+
+  return { matchById, getScore, resolveName, resolveSig, computeWinnerSlot, computeLoserSlot };
+}
+
 export default function Bracket() {
   const { id } = useParams();
   if (!id) {
@@ -54,9 +151,6 @@ export default function Bracket() {
   const progress = useMemo(() => safeParseProgress(rawProgress), [rawProgress]);
 
   useEffect(() => {
-    // Redraw lines after DOM settles
-    // NOTE: current view model stores single-elim size at vm.se.size.
-    // (Older versions used vm.targetTeams.) If sizeHint is 0, no pairs draw.
     const sizeHint = vm?.kind === "single" ? (vm.se?.size ?? 0) : 0;
     const raf = requestAnimationFrame(() => drawAllConnections(sizeHint));
     const onResize = () => drawAllConnections(sizeHint);
@@ -88,6 +182,8 @@ export default function Bracket() {
 
       {vm.kind === "roundrobin" ? (
         <RoundRobinView vm={vm} progress={progress} pKey={pKey} />
+      ) : vm.kind === "double" ? (
+        <DoubleElimView vm={vm} progress={progress} pKey={pKey} />
       ) : (
         <SingleElimView vm={vm} progress={progress} pKey={pKey} />
       )}
@@ -95,13 +191,9 @@ export default function Bracket() {
   );
 }
 
-/* ---------------- SINGLE ELIM ---------------- */
-
 function SingleElimView({ vm, progress, pKey }) {
   const { se } = vm;
 
-  // Resolve a teamId into a "signature" (the actual base team id t#) and a display name.
-  // winnerIds (w#) resolve from their source match.
   const matchByWinner = useMemo(() => {
     const map = {};
     for (const r of se.rounds) {
@@ -119,10 +211,9 @@ function SingleElimView({ vm, progress, pKey }) {
   function computeWinner(match) {
     const [A, B] = match.teams;
 
-    const aName = resolveTeamName(A.id, match);
-    const bName = resolveTeamName(B.id, match);
+    const aName = resolveTeamName(A.id);
+    const bName = resolveTeamName(B.id);
 
-    // auto-advance BYE
     if (isByeName(aName) && !isByeName(bName)) return { winnerTeamId: B.id };
     if (isByeName(bName) && !isByeName(aName)) return { winnerTeamId: A.id };
     if (isByeName(aName) && isByeName(bName)) return { winnerTeamId: A.id };
@@ -142,74 +233,54 @@ function SingleElimView({ vm, progress, pKey }) {
   }
 
   function resolveTeamSig(teamId) {
-    // Base teams are t#
     if (teamId.startsWith("t")) return teamId;
 
-    // Winner placeholder w# -> follow its match
     const src = matchByWinner[teamId];
     if (!src) return teamId;
 
     const w = computeWinner(src).winnerTeamId;
-    if (!w) return teamId; // unresolved winner yet
+    if (!w) return teamId;
     return resolveTeamSig(w);
   }
 
-  function resolveTeamName(teamId, contextMatch) {
-    // if base team t#
+  function resolveTeamName(teamId) {
     if (teamId.startsWith("t")) {
       const idx = Number(teamId.slice(1)) - 1;
       return se.slots[idx] ?? "Team";
     }
 
-    // winner placeholder w#
     const src = matchByWinner[teamId];
     if (!src) return "Winner";
 
     const w = computeWinner(src).winnerTeamId;
     if (!w) return "Winner";
 
-    return resolveTeamName(w, contextMatch);
+    return resolveTeamName(w);
   }
 
-  // Whenever progress changes, clear downstream scores if the participating teams changed.
   useEffect(() => {
-    // Build expected signatures for every match slot
     const nextSig = {};
     let changed = false;
-
-    // Copy scores so we can delete entries if needed
     const nextScores = JSON.parse(JSON.stringify(progress.scores || {}));
 
     for (const r of se.rounds) {
       if (!r.matches) continue;
       for (const m of r.matches) {
-        const aId = m.teams[0].id;
-        const bId = m.teams[1].id;
-
-        const aSig = resolveTeamSig(aId);
-        const bSig = resolveTeamSig(bId);
-
+        const aSig = resolveTeamSig(m.teams[0].id);
+        const bSig = resolveTeamSig(m.teams[1].id);
         nextSig[m.matchId] = { aSig, bSig };
 
         const prev = progress.sig?.[m.matchId];
         if (prev && (prev.aSig !== aSig || prev.bSig !== bSig)) {
-          // participants changed -> wipe this match scores
           delete nextScores[m.matchId];
           changed = true;
         }
       }
     }
 
-    // Also update sig if it differs
-    const prevSigRaw = JSON.stringify(progress.sig || {});
-    const nextSigRaw = JSON.stringify(nextSig);
-    if (prevSigRaw !== nextSigRaw) changed = true;
-
-    if (changed) {
-      saveProgress({ scores: nextScores, sig: nextSig }, pKey);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [se, pKey, rawStable(progress)]);
+    if (JSON.stringify(progress.sig || {}) !== JSON.stringify(nextSig)) changed = true;
+    if (changed) saveProgress({ scores: nextScores, sig: nextSig }, pKey);
+  }, [se, pKey, progress, matchByWinner]);
 
   function onScoreChange(matchId, teamId, rawValue) {
     const cleaned = rawValue === "" ? "" : rawValue.replace(/[^\d]/g, "");
@@ -219,7 +290,6 @@ function SingleElimView({ vm, progress, pKey }) {
     saveProgress(p, pKey);
   }
 
-  // Champion name comes from se.rounds championFrom
   const championName = resolveTeamName(se.rounds[se.rounds.length - 1].championFrom);
 
   return (
@@ -233,10 +303,7 @@ function SingleElimView({ vm, progress, pKey }) {
                 <div
                   className="round"
                   key={r.roundId}
-                  style={{
-                    "--grid-rows": se.gridRows,
-                    "--round-depth": idx,
-                  }}
+                  style={{ "--grid-rows": se.gridRows, "--round-depth": idx }}
                 >
                   <h2>{r.title}</h2>
                   <div className="round-grid">
@@ -259,31 +326,19 @@ function SingleElimView({ vm, progress, pKey }) {
               <div
                 className="round"
                 key={r.roundId}
-                style={{
-                  "--grid-rows": r.gridRows,
-                  "--round-depth": r.depth ?? idx,
-                }}
+                style={{ "--grid-rows": r.gridRows, "--round-depth": r.depth ?? idx }}
               >
                 <h2>{r.title}</h2>
                 <div className="round-grid">
                   {r.matches.map((m) => {
                     const A = m.teams[0];
                     const B = m.teams[1];
-
-                    const aName = resolveTeamName(A.id, m);
-                    const bName = resolveTeamName(B.id, m);
-
+                    const aName = resolveTeamName(A.id);
+                    const bName = resolveTeamName(B.id);
                     const aScore = getScore(m.matchId, A.id);
                     const bScore = getScore(m.matchId, B.id);
-
                     const winner = computeWinner(m).winnerTeamId;
-
-                    const aWin = winner === A.id;
-                    const bWin = winner === B.id;
-
-                    // If either side is BYE, disable score input
-                    const disableA = isByeName(aName) || isByeName(bName);
-                    const disableB = isByeName(aName) || isByeName(bName);
+                    const disableScores = isByeName(aName) || isByeName(bName);
 
                     return (
                       <div
@@ -292,37 +347,24 @@ function SingleElimView({ vm, progress, pKey }) {
                         key={m.matchId}
                         style={{ gridRow: `${m.gridStart} / span ${m.gridSpan}` }}
                       >
-                        <div
-                          className={"team " + (aWin ? "team-winner" : "")}
-                          // IMPORTANT: Only base teams (t#) get DOM ids.
-                          // Winner placeholders (w#) are rendered without DOM ids so ids remain unique.
-                          id={A.id.startsWith("t") ? A.id : undefined}
-                          data-teamid={A.id}
-                        >
+                        <div className={"team " + (winner === A.id ? "team-winner" : "")} id={A.id.startsWith("t") ? A.id : undefined} data-teamid={A.id}>
                           <span>{aName}</span>
                           <input
                             value={aScore}
                             onChange={(e) => onScoreChange(m.matchId, A.id, e.target.value)}
                             inputMode="numeric"
-                            disabled={disableA}
+                            disabled={disableScores}
                           />
                         </div>
-
-                        <div
-                          className={"team " + (bWin ? "team-winner" : "")}
-                          id={B.id.startsWith("t") ? B.id : undefined}
-                          data-teamid={B.id}
-                        >
+                        <div className={"team " + (winner === B.id ? "team-winner" : "")} id={B.id.startsWith("t") ? B.id : undefined} data-teamid={B.id}>
                           <span>{bName}</span>
                           <input
                             value={bScore}
                             onChange={(e) => onScoreChange(m.matchId, B.id, e.target.value)}
                             inputMode="numeric"
-                            disabled={disableB}
+                            disabled={disableScores}
                           />
                         </div>
-
-                        {/* Winner slot element for bracket lines */}
                         <div id={m.winnerId} className="winner-slot" aria-hidden="true" />
                       </div>
                     );
@@ -337,19 +379,112 @@ function SingleElimView({ vm, progress, pKey }) {
   );
 }
 
-function safeClone(p) {
-  return {
-    scores: JSON.parse(JSON.stringify(p?.scores || {})),
-    sig: JSON.parse(JSON.stringify(p?.sig || {})),
-  };
-}
+function DoubleElimView({ vm, progress, pKey }) {
+  const { de } = vm;
+  const resolver = useMemo(() => buildDoubleResolver(de, progress), [de, progress]);
 
-// stable dependency helper: only changes when the JSON changes
-function rawStable(obj) {
-  return JSON.stringify(obj);
-}
+  useEffect(() => {
+    const nextSig = {};
+    let changed = false;
+    const nextScores = JSON.parse(JSON.stringify(progress.scores || {}));
 
-/* ---------------- ROUND ROBIN ---------------- */
+    for (const section of [de.winners, de.losers, de.finals]) {
+      for (const round of section) {
+        for (const match of round.matches) {
+          const aSig = resolver.resolveSig(match.teams[0].source);
+          const bSig = resolver.resolveSig(match.teams[1].source);
+          nextSig[match.matchId] = { aSig, bSig };
+
+          const prev = progress.sig?.[match.matchId];
+          if (prev && (prev.aSig !== aSig || prev.bSig !== bSig)) {
+            delete nextScores[match.matchId];
+            changed = true;
+          }
+        }
+      }
+    }
+
+    if (JSON.stringify(progress.sig || {}) !== JSON.stringify(nextSig)) changed = true;
+    if (changed) saveProgress({ scores: nextScores, sig: nextSig }, pKey);
+  }, [de, resolver, progress, pKey]);
+
+  function onScoreChange(matchId, slotId, rawValue) {
+    const cleaned = rawValue === "" ? "" : rawValue.replace(/[^\d]/g, "");
+    const p = safeClone(progress);
+    if (!p.scores[matchId]) p.scores[matchId] = {};
+    p.scores[matchId][slotId] = cleaned;
+    saveProgress(p, pKey);
+  }
+
+  const championMatch = de.finals[de.finals.length - 1]?.matches?.[0];
+  const championSlot = championMatch ? resolver.computeWinnerSlot(championMatch) : null;
+  const champion = championSlot
+    ? resolver.resolveName(championMatch.teams.find((team) => team.id === championSlot)?.source)
+    : "Champion";
+
+  function renderSection(title, rounds) {
+    return (
+      <section className="de-section">
+        <h2 className="de-section-title">{title}</h2>
+        <div className="de-grid">
+          {rounds.map((round) => (
+            <div className="de-round" key={round.roundId}>
+              <h3>{round.title}</h3>
+              <div className="de-round-matches">
+                {round.matches.map((match) => {
+                  const [A, B] = match.teams;
+                  const aName = resolver.resolveName(A.source);
+                  const bName = resolver.resolveName(B.source);
+                  const winner = resolver.computeWinnerSlot(match);
+                  const disableScores = isByeName(aName) || isByeName(bName);
+
+                  return (
+                    <div className="de-match" key={match.matchId}>
+                      <div className={"team " + (winner === A.id ? "team-winner" : "") }>
+                        <span>{aName}</span>
+                        <input
+                          value={resolver.getScore(match.matchId, A.id)}
+                          onChange={(e) => onScoreChange(match.matchId, A.id, e.target.value)}
+                          inputMode="numeric"
+                          disabled={disableScores}
+                        />
+                      </div>
+                      <div className={"team " + (winner === B.id ? "team-winner" : "") }>
+                        <span>{bName}</span>
+                        <input
+                          value={resolver.getScore(match.matchId, B.id)}
+                          onChange={(e) => onScoreChange(match.matchId, B.id, e.target.value)}
+                          inputMode="numeric"
+                          disabled={disableScores}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="de-page">
+      {renderSection("Winners Bracket", de.winners)}
+      {de.losers.length ? renderSection("Losers Bracket", de.losers) : null}
+      {renderSection("Finals", de.finals)}
+
+      <section className="de-champion-card champion">
+        <h2>Champion</h2>
+        <div className="team champion-team">
+          <span>{champion}</span>
+          <span />
+        </div>
+      </section>
+    </div>
+  );
+}
 
 function RoundRobinView({ vm, progress, pKey }) {
   const { teamById, rounds, teamIds } = vm.rr;
@@ -408,21 +543,16 @@ function RoundRobinView({ vm, progress, pKey }) {
       {rounds.map((r) => (
         <section className="rr-round" key={`rr_${r.roundIndex}`}>
           <h2 className="rr-title">Round {r.roundIndex}</h2>
-
           <div className="rr-matches">
             {r.matches.map((m) => {
               const aName = teamById[m.aId];
               const bName = teamById[m.bId];
-
               const aScoreRaw = getScore(m.matchId, m.aId);
               const bScoreRaw = getScore(m.matchId, m.bId);
-
               const aScore = aScoreRaw === "" ? null : Number(aScoreRaw);
               const bScore = bScoreRaw === "" ? null : Number(bScoreRaw);
-
               const aOk = typeof aScore === "number" && Number.isFinite(aScore);
               const bOk = typeof bScore === "number" && Number.isFinite(bScore);
-
               const aWin = aOk && bOk && aScore > bScore;
               const bWin = aOk && bOk && bScore > aScore;
 
@@ -436,7 +566,6 @@ function RoundRobinView({ vm, progress, pKey }) {
                       inputMode="numeric"
                     />
                   </div>
-
                   <div className={"team " + (bWin ? "team-winner" : "")}>
                     {bName}
                     <input
@@ -454,7 +583,6 @@ function RoundRobinView({ vm, progress, pKey }) {
 
       <section className="rr-standings">
         <h2 className="rr-title">Standings</h2>
-
         <div className="rr-standings-table">
           <div className="rr-standings-row rr-standings-head">
             <div>Rank</div>
@@ -462,7 +590,6 @@ function RoundRobinView({ vm, progress, pKey }) {
             <div>Wins</div>
             <div>Point Diff</div>
           </div>
-
           {standings.map((t, i) => (
             <div className="rr-standings-row" key={t.id}>
               <div>{i + 1}</div>
