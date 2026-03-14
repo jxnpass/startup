@@ -1,4 +1,25 @@
 {
-  "users": [],
-  "sessions": []
+  "users": [
+    {
+      "id": "4e7155fc-5dda-426f-bb35-e6735672f4f4",
+      "email": "jxn@gmail.com",
+      "username": "jxn",
+      "passwordHash": "$2b$10$8xruoxU78/M9AsIxl4C.Z.9qNPIQxaXsC00jXG5fJgavyvhOrhCzS",
+      "createdAt": "2026-03-14T07:25:33.166Z"
+    },
+    {
+      "id": "c7dc5a88-0d04-4166-95e2-1c2c1b0d5eb9",
+      "email": "jackson@gmail.com",
+      "username": "jackson",
+      "passwordHash": "$2b$10$akhwZ/y6Hrhgn/YjGSQUzOk5rU433bjbv0e4BGyLYF2hUz0oN/iwC",
+      "createdAt": "2026-03-14T07:32:00.846Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "f6ac145a-8929-47a7-bacf-caebf09f3e48",
+      "userId": "c7dc5a88-0d04-4166-95e2-1c2c1b0d5eb9",
+      "createdAt": "2026-03-14T07:37:22.086Z"
+    }
+  ]
 }

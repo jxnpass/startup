@@ -188,6 +188,13 @@ export default function Create() {
               </fieldset>
             </li>
           )}
+
+          <h4> Sharing Options </h4>
+
+          ...
+          
+
+
         </ul>
 
         <button type="submit">Create</button>
