@@ -63,3 +63,10 @@ This was a lot of fun to see it all come together. The trickiest part was handli
 Ultimately, what was most exciting was seeing how a local storage system can save multiple brackets and retain the progress-state of the bracket. This will be very cool, and can make sharing brackets across users very easy since each bracket will have its own link to view. Having mulitple users edit the bracket will be a tricky component to detail. 
 
 Another satisfying component was the link from creation of the bracket to the actual bracket itself. I used a JSON format to essentially have the bracketStructure.js or roundRobin.js files essentially read in the information from the bracketDraft.js file and essentially impute values. That will be a very nice feature when I eventually get into user-by-user data storage, where I can just save elements of the bracket / progress state. 
+
+## Service
+
+This one was pretty straightforward, and was clear how to create a separate port to essentially handle backend processes (and store these functions and data under the service folder). However, getting it to deploy was tricky, as now there are two ports with two separate packages that need to be instilled. 
+
+Handling the API call was also fairly straightforward. I decided to make use of the "useless facts" API, simply because APIs tend to either require signing up for an API key, or are completely shutdown by the owners, so I went with a call that was low-risk and low-maintenance with an unlimited number of API calls allowed per month. 
+

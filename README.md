@@ -109,13 +109,13 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Node.js/Express HTTP service** - I did not complete this part of the deliverable.
-- [ ] **Static middleware for frontend** - I did not complete this part of the deliverable.
-- [ ] **Calls to third party endpoints** - I did not complete this part of the deliverable.
-- [ ] **Backend service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Frontend calls service endpoints** - I did not complete this part of the deliverable.
-- [ ] **Supports registration, login, logout, and restricted endpoint** - I did not complete this part of the deliverable.
-
+- [x] **Node.js/Express HTTP service** - Initialized, called for express in index.js. Created service folder.
+- [x] **Static middleware for frontend** - Created using  `app.use(express.static('public'));`. Frontend files are copied into the public directory. 
+- [x] **Calls to third party endpoints** - API call for quote in About section. This is implemented using `fetch()` inside about.jsx
+- [x] **Backend service endpoints** - service/index.js handles POST and GET requests for user actions, such as sign up, login, and logout. 
+- [x] **Frontend calls service endpoints** - 
+- [x] **Supports registration, login, logout, and restricted endpoint** - Functionality added to create and save users, uses hash codes for keeping passwords safe, users now must log in to access the app.
+- [x] **Uses BCrypt to hash passwords** - Passwords are hashed using the bcryptjs library before being stored in the user database (users.json). This ensures that plaintext passwords are never saved and improves overall authentication security.
 
 ## 🚀 DB deliverable
 
