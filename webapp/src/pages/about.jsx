@@ -41,7 +41,16 @@ export default function About() {
             <div>
               <b>{fact}</b>
             </div>
-            <div className="quote-source">Powered by Useless Facts</div>
+              <div className="quote-source">
+                Powered by{" "}
+                <a
+                  href="https://uselessfacts.jsph.pl/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >
+                  Useless Facts
+                </a>
+            </div>
           </div>
         </div>
       </div>
