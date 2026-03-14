@@ -110,8 +110,8 @@ app.post('/api/auth/create', async (req, res) => {
     return res.status(400).send({ message: 'Email and password are required.' });
   }
 
-  if (password.length < 6) {
-    return res.status(400).send({ message: 'Password must be at least 6 characters.' });
+  if (password.length < 4) {
+    return res.status(400).send({ message: 'Password must be at least 4 characters.' });
   }
 
   const data = readData();
