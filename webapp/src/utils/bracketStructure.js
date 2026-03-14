@@ -66,7 +66,9 @@ export function normalizeDraft(raw) {
     shareLink,
   };
 
-  return { bracketName, bracketDesc, type, teamCount, teamNames, mode, roundCount, sharing };
+  const doubleElimResetFinal = raw?.doubleElimResetFinal !== false;
+
+  return { bracketName, bracketDesc, type, teamCount, teamNames, mode, roundCount, sharing, doubleElimResetFinal };
 }
 
 function roundTitle(size, roundIdx) {
@@ -200,7 +202,7 @@ function makeDeMatch(matchId, sourceA, sourceB) {
   };
 }
 
-function buildDoubleElim(teamNames, mode) {
+function buildDoubleElim(teamNames, mode, resetFinal = true) {
   const { size, slots } = orderedSlots(teamNames, mode, 8);
   const slotTeamIds = slots.map((_, i) => `t${i + 1}`);
   const teamById = Object.fromEntries(slotTeamIds.map((id, i) => [id, slots[i]]));
@@ -221,6 +223,13 @@ function buildDoubleElim(teamNames, mode) {
       title: "Grand Final",
       matches: [makeDeMatch("gf_r1_m1", winnerSource("wb_r1_m1"), loserSource("wb_r1_m1"))],
     });
+    if (resetFinal) {
+      finals.push({
+        roundId: "gf_r2",
+        title: "Final Reset",
+        matches: [makeDeMatch("gf_r2_m1", winnerSource("gf_r1_m1"), loserSource("gf_r1_m1"))],
+      });
+    }
   } else if (size === 4) {
     winners.push({
       roundId: "wb_r1",
@@ -254,6 +263,13 @@ function buildDoubleElim(teamNames, mode) {
       title: "Grand Final",
       matches: [makeDeMatch("gf_r1_m1", winnerSource("wb_r2_m1"), winnerSource("lb_r2_m1"))],
     });
+    if (resetFinal) {
+      finals.push({
+        roundId: "gf_r2",
+        title: "Final Reset",
+        matches: [makeDeMatch("gf_r2_m1", winnerSource("gf_r1_m1"), loserSource("gf_r1_m1"))],
+      });
+    }
   } else {
     winners.push({
       roundId: "wb_r1",
@@ -316,9 +332,16 @@ function buildDoubleElim(teamNames, mode) {
       title: "Grand Final",
       matches: [makeDeMatch("gf_r1_m1", winnerSource("wb_r3_m1"), winnerSource("lb_r4_m1"))],
     });
+    if (resetFinal) {
+      finals.push({
+        roundId: "gf_r2",
+        title: "Final Reset",
+        matches: [makeDeMatch("gf_r2_m1", winnerSource("gf_r1_m1"), loserSource("gf_r1_m1"))],
+      });
+    }
   }
 
-  return { size, slots, teamById, winners, losers, finals };
+  return { size, slots, teamById, winners, losers, finals, resetFinalEnabled: resetFinal };
 }
 
 export function buildBracketViewModel(rawDraft) {
@@ -333,7 +356,7 @@ export function buildBracketViewModel(rawDraft) {
   }
 
   if (meta.type === "double") {
-    const de = buildDoubleElim(meta.teamNames, meta.mode);
+    const de = buildDoubleElim(meta.teamNames, meta.mode, meta.doubleElimResetFinal);
     return { meta, kind: "double", de };
   }
 

@@ -5,7 +5,7 @@ import "../styles/bracket.css";
 import { draftKeyFor, progressKeyFor } from "../utils/bracketLibrary.js";
 import { useBracketProgressRaw, saveProgress } from "../utils/bracketProgress.js";
 import { buildBracketViewModel } from "../utils/bracketStructure.js";
-import { drawAllConnections } from "../utils/bracketLines.js";
+import { drawAllConnections, drawDataConnections } from "../utils/bracketLines.js";
 
 function readDraft(id) {
   const raw = localStorage.getItem(draftKeyFor(id));
@@ -152,12 +152,20 @@ export default function Bracket() {
 
   useEffect(() => {
     const sizeHint = vm?.kind === "single" ? (vm.se?.size ?? 0) : 0;
-    const raf = requestAnimationFrame(() => drawAllConnections(sizeHint));
-    const onResize = () => drawAllConnections(sizeHint);
-    window.addEventListener("resize", onResize);
+
+    const draw = () => {
+      if (vm?.kind === "double") {
+        drawDataConnections({ svgId: "de-bracket-lines", boardSelector: ".de-bracket-board", skipCrossLane: true });
+      } else {
+        drawAllConnections(sizeHint);
+      }
+    };
+
+    const raf = requestAnimationFrame(draw);
+    window.addEventListener("resize", draw);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", draw);
     };
   }, [vm, progress]);
 
@@ -379,9 +387,103 @@ function SingleElimView({ vm, progress, pKey }) {
   );
 }
 
+function layoutDoubleElim(de, finalCount = 1) {
+  const maxRoundCount = Math.max(de.winners.length, de.losers.length || 0);
+  const firstFinalColumn = maxRoundCount + 1;
+  const championColumn = firstFinalColumn + finalCount;
+  const totalColumns = championColumn;
+
+  const winnersGridRows = de.size >= 8 ? 16 : de.size === 4 ? 8 : 4;
+  const losersGridRows = de.size >= 8 ? 16 : de.size === 4 ? 8 : 4;
+  const finalsGridRows = winnersGridRows;
+
+  const winners = de.winners.map((round, idx) => {
+    let starts = [1];
+    let span = winnersGridRows;
+
+    if (de.size >= 8) {
+      if (idx === 0) {
+        starts = [1, 5, 9, 13];
+        span = 4;
+      } else if (idx === 1) {
+        starts = [1, 9];
+        span = 8;
+      }
+    } else if (de.size === 4 && idx === 0) {
+      starts = [1, 5];
+      span = 4;
+    }
+
+    return {
+      ...round,
+      column: idx + 1,
+      gridRows: winnersGridRows,
+      matches: round.matches.map((match, mIdx) => ({
+        ...match,
+        gridStart: starts[mIdx] ?? 1,
+        gridSpan: span,
+      })),
+    };
+  });
+
+  const losers = de.losers.map((round, idx) => {
+    let starts = [1];
+    let span = losersGridRows;
+
+    if (de.size >= 8) {
+      if (idx === 0 || idx === 1) {
+        starts = [1, 9];
+        span = 4;
+      } else if (idx === 2) {
+        starts = [1];
+        span = 8;
+      }
+    } else if (de.size === 4 && idx === 0) {
+      starts = [1];
+      span = 4;
+    }
+
+    return {
+      ...round,
+      column: idx + 1,
+      gridRows: losersGridRows,
+      matches: round.matches.map((match, mIdx) => ({
+        ...match,
+        gridStart: starts[mIdx] ?? 1,
+        gridSpan: span,
+      })),
+    };
+  });
+
+  const finals = de.finals.slice(0, finalCount).map((round, idx) => ({
+    ...round,
+    column: firstFinalColumn + idx,
+    gridRows: finalsGridRows,
+    matches: round.matches.map((match) => ({
+      ...match,
+      gridStart: 1,
+      gridSpan: finalsGridRows,
+    })),
+  }));
+
+  return { winners, losers, finals, totalColumns, championColumn, finalsGridRows };
+}
+
 function DoubleElimView({ vm, progress, pKey }) {
   const { de } = vm;
   const resolver = useMemo(() => buildDoubleResolver(de, progress), [de, progress]);
+  const grandFinal = de.finals[0]?.matches?.[0] ?? null;
+  const resetFinal = de.finals[1]?.matches?.[0] ?? null;
+  const grandFinalWinner = grandFinal ? resolver.computeWinnerSlot(grandFinal) : null;
+  const resetTriggered = Boolean(
+    de.resetFinalEnabled &&
+      resetFinal &&
+      grandFinal &&
+      grandFinalWinner &&
+      grandFinalWinner === grandFinal.teams[1]?.id
+  );
+  const visibleFinalCount = resetTriggered && resetFinal ? 2 : 1;
+  const layout = useMemo(() => layoutDoubleElim(de, visibleFinalCount), [de, visibleFinalCount]);
 
   useEffect(() => {
     const nextSig = {};
@@ -416,72 +518,100 @@ function DoubleElimView({ vm, progress, pKey }) {
     saveProgress(p, pKey);
   }
 
-  const championMatch = de.finals[de.finals.length - 1]?.matches?.[0];
+  const championMatch = resetTriggered && resetFinal ? resetFinal : grandFinal;
   const championSlot = championMatch ? resolver.computeWinnerSlot(championMatch) : null;
   const champion = championSlot
     ? resolver.resolveName(championMatch.teams.find((team) => team.id === championSlot)?.source)
-    : "Champion";
+    : resetTriggered
+      ? "TBD"
+      : "Champion";
 
-  function renderSection(title, rounds) {
+  function sourceMatchIds(match) {
+    return match.teams
+      .map((team) => team.source?.matchId)
+      .filter(Boolean)
+      .join(",");
+  }
+
+  function renderRound(round, extraClass = "", lane = "") {
     return (
-      <section className="de-section">
-        <h2 className="de-section-title">{title}</h2>
-        <div className="de-grid">
-          {rounds.map((round) => (
-            <div className="de-round" key={round.roundId}>
-              <h3>{round.title}</h3>
-              <div className="de-round-matches">
-                {round.matches.map((match) => {
-                  const [A, B] = match.teams;
-                  const aName = resolver.resolveName(A.source);
-                  const bName = resolver.resolveName(B.source);
-                  const winner = resolver.computeWinnerSlot(match);
-                  const disableScores = isByeName(aName) || isByeName(bName);
+      <div
+        className={`round de-round ${extraClass}`.trim()}
+        key={round.roundId}
+        style={{ gridColumn: round.column, "--grid-rows": round.gridRows }}
+      >
+        <h2>{round.title}</h2>
+        <div className="round-grid">
+          {round.matches.map((match) => {
+            const [A, B] = match.teams;
+            const aName = resolver.resolveName(A.source);
+            const bName = resolver.resolveName(B.source);
+            const winner = resolver.computeWinnerSlot(match);
+            const disableScores = isByeName(aName) || isByeName(bName);
 
-                  return (
-                    <div className="de-match" key={match.matchId}>
-                      <div className={"team " + (winner === A.id ? "team-winner" : "") }>
-                        <span>{aName}</span>
-                        <input
-                          value={resolver.getScore(match.matchId, A.id)}
-                          onChange={(e) => onScoreChange(match.matchId, A.id, e.target.value)}
-                          inputMode="numeric"
-                          disabled={disableScores}
-                        />
-                      </div>
-                      <div className={"team " + (winner === B.id ? "team-winner" : "") }>
-                        <span>{bName}</span>
-                        <input
-                          value={resolver.getScore(match.matchId, B.id)}
-                          onChange={(e) => onScoreChange(match.matchId, B.id, e.target.value)}
-                          inputMode="numeric"
-                          disabled={disableScores}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+            return (
+              <div
+                className="match de-match"
+                id={match.matchId}
+                key={match.matchId}
+                data-lane={lane}
+                data-source-matchids={sourceMatchIds(match)}
+                style={{ gridRow: `${match.gridStart} / span ${match.gridSpan}` }}
+              >
+                <div className={"team " + (winner === A.id ? "team-winner" : "")}>
+                  <span>{aName}</span>
+                  <input
+                    value={resolver.getScore(match.matchId, A.id)}
+                    onChange={(e) => onScoreChange(match.matchId, A.id, e.target.value)}
+                    inputMode="numeric"
+                    disabled={disableScores}
+                  />
+                </div>
+                <div className={"team " + (winner === B.id ? "team-winner" : "")}>
+                  <span>{bName}</span>
+                  <input
+                    value={resolver.getScore(match.matchId, B.id)}
+                    onChange={(e) => onScoreChange(match.matchId, B.id, e.target.value)}
+                    inputMode="numeric"
+                    disabled={disableScores}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <div className="de-page">
-      {renderSection("Winners Bracket", de.winners)}
-      {de.losers.length ? renderSection("Losers Bracket", de.losers) : null}
-      {renderSection("Finals", de.finals)}
+    <div className="bracket-page de-page">
+      <div className="de-bracket-shell">
+        <svg id="de-bracket-lines" />
+        <div className="de-bracket-board" style={{ "--de-cols": layout.totalColumns }}>
+          {layout.winners.map((round) => renderRound(round, "de-round-winners", "winners"))}
+          {layout.losers.map((round) => renderRound(round, "de-round-losers", "losers"))}
+          {layout.finals.map((round) => renderRound(round, "de-round-finals", "finals"))}
 
-      <section className="de-champion-card champion">
-        <h2>Champion</h2>
-        <div className="team champion-team">
-          <span>{champion}</span>
-          <span />
+          <div
+            id="de-champion"
+            className="round de-round de-round-champion"
+            data-lane="champion"
+            data-source-matchids={championMatch ? championMatch.matchId : ""}
+            style={{ gridColumn: layout.championColumn, "--grid-rows": layout.finalsGridRows }}
+          >
+            <h2>Champion</h2>
+            <div className="round-grid de-champion-grid">
+              <div className="match champion de-champion-match" style={{ gridRow: `1 / span ${layout.finalsGridRows}` }}>
+                <div className="team champion-team">
+                  <span>{champion}</span>
+                  <span />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

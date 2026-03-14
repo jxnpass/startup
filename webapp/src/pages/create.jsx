@@ -34,6 +34,7 @@ export default function Create() {
   const [viewAccess, setViewAccess] = useState("personal");
   const [collaboratorEmails, setCollaboratorEmails] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
+  const [doubleElimResetFinal, setDoubleElimResetFinal] = useState(true);
   const [pendingBracketId] = useState(() => generateBracketId());
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export default function Create() {
               collaboratorEmails: parseEmails(collaboratorEmails),
               shareLink,
             },
+            doubleElimResetFinal,
           });
 
           const id = pendingBracketId;
@@ -192,9 +194,9 @@ export default function Create() {
               type="number"
               id="teamCount"
               min="2"
-              max="16"
+              max={maxTeams}
               value={teamCount}
-              onChange={(e) => setTeamCount(Math.max(2, Math.min(16, Number(e.target.value) || 2)))}
+              onChange={(e) => setTeamCount(Math.max(2, Math.min(maxTeams, Number(e.target.value) || 2)))}
             />
           </li>
 
@@ -242,6 +244,21 @@ export default function Create() {
                 />
                 <label htmlFor="random">Random</label>
               </fieldset>
+            </li>
+          )}
+
+          {type === "double" && (
+            <li>
+              <label htmlFor="doubleResetFinal">Grand final reset:</label>
+              <div className="sharing-note">
+                If the losers-bracket team wins the finals, play one more match to decide the champion.
+              </div>
+              <input
+                id="doubleResetFinal"
+                type="checkbox"
+                checked={doubleElimResetFinal}
+                onChange={(e) => setDoubleElimResetFinal(e.target.checked)}
+              />
             </li>
           )}
 
