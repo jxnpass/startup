@@ -2,12 +2,11 @@
 // Owns draft payload building + creates a new bracket ID record in localStorage + library.
 
 import {
-  addBracketToLibrary,
+  cacheBracketRecord,
   draftKeyFor,
   progressKeyFor,
   generateBracketId,
 } from "./bracketLibrary.js";
-import { saveProgress } from "./bracketProgress.js";
 
 export const TEAM_COUNT_MIN = 2;
 export const TEAM_COUNT_MAX = 16;

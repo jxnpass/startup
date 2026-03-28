@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import "../styles/bracket.css";
 
-import { draftKeyFor, progressKeyFor } from "../utils/bracketLibrary.js";
-import { useBracketProgressRaw, saveProgress } from "../utils/bracketProgress.js";
+import { cacheBracketRecord, draftKeyFor, progressKeyFor } from "../utils/bracketLibrary.js";
 import { buildBracketViewModel } from "../utils/bracketStructure.js";
 import { drawAllConnections, drawDataConnections } from "../utils/bracketLines.js";
+import { getBracket, normalizeProgress, updateBracket } from "../utils/bracketApi.js";
 
 function readDraft(id) {
   const raw = localStorage.getItem(draftKeyFor(id));
@@ -133,22 +133,63 @@ function buildDoubleResolver(de, progress) {
 
 export default function Bracket() {
   const { id } = useParams();
-  if (!id) {
-    return (
-      <div className="page page-bracket">
-        <p>
-          No bracket selected. Go to <Link to="/list">My Brackets</Link>.
-        </p>
-      </div>
-    );
-  }
+  const [draft, setDraft] = useState(() => (id ? readDraft(id) : null));
+  const [progress, setProgress] = useState(() => safeParseProgress(id ? localStorage.getItem(progressKeyFor(id)) : null));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const saveTimerRef = useRef(null);
 
-  const draft = useMemo(() => readDraft(id), [id]);
+  useEffect(() => {
+    if (!id) return;
+    let ignore = false;
+
+    async function load() {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await getBracket(id);
+        if (ignore) return;
+        cacheBracketRecord(data.bracket);
+        setDraft(data.bracket?.draft || null);
+        setProgress(normalizeProgress(data.bracket?.progress));
+      } catch (err) {
+        if (ignore) return;
+        setError(err.message || 'Could not load bracket.');
+        setDraft(readDraft(id));
+        setProgress(safeParseProgress(localStorage.getItem(progressKeyFor(id))));
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      ignore = true;
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [id]);
+
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
-  const pKey = progressKeyFor(id);
-  const rawProgress = useBracketProgressRaw(pKey);
-  const progress = useMemo(() => safeParseProgress(rawProgress), [rawProgress]);
+  function persistProgress(nextProgress) {
+    if (!id) return;
+    const normalized = normalizeProgress(nextProgress);
+    setProgress(normalized);
+    localStorage.setItem(progressKeyFor(id), JSON.stringify(normalized));
+
+    if (saveTimerRef.current) {
+      window.clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = window.setTimeout(async () => {
+      try {
+        await updateBracket(id, { progress: normalized });
+      } catch (err) {
+        console.error('Failed to save bracket progress:', err);
+        setError((current) => current || 'Progress could not be saved to MongoDB.');
+      }
+    }, 250);
+  }
 
   useEffect(() => {
     const sizeHint = vm?.kind === "single" ? (vm.se?.size ?? 0) : 0;
@@ -169,11 +210,29 @@ export default function Bracket() {
     };
   }, [vm, progress]);
 
+  if (!id) {
+    return (
+      <div className="page page-bracket">
+        <p>
+          No bracket selected. Go to <Link to="/list">My Brackets</Link>.
+        </p>
+      </div>
+    );
+  }
+
+  if (loading && !draft) {
+    return (
+      <div className="page page-bracket">
+        <p>Loading bracket...</p>
+      </div>
+    );
+  }
+
   if (!vm) {
     return (
       <div className="page page-bracket">
         <p>
-          Bracket not found. Go to <Link to="/list">My Brackets</Link>.
+          {error || 'Bracket not found.'} Go to <Link to="/list">My Brackets</Link>.
         </p>
       </div>
     );
@@ -186,20 +245,21 @@ export default function Bracket() {
       <div className="bracket-header">
         <h1 className="bracket-title">{meta.bracketName}</h1>
         <p className="bracket-description">{meta.bracketDesc}</p>
+        {error ? <p>{error}</p> : null}
       </div>
 
       {vm.kind === "roundrobin" ? (
-        <RoundRobinView vm={vm} progress={progress} pKey={pKey} />
+        <RoundRobinView vm={vm} progress={progress} saveProgress={persistProgress} />
       ) : vm.kind === "double" ? (
-        <DoubleElimView vm={vm} progress={progress} pKey={pKey} />
+        <DoubleElimView vm={vm} progress={progress} saveProgress={persistProgress} />
       ) : (
-        <SingleElimView vm={vm} progress={progress} pKey={pKey} />
+        <SingleElimView vm={vm} progress={progress} saveProgress={persistProgress} />
       )}
     </div>
   );
 }
 
-function SingleElimView({ vm, progress, pKey }) {
+function SingleElimView({ vm, progress, saveProgress }) {
   const { se } = vm;
 
   const matchByWinner = useMemo(() => {
@@ -287,15 +347,15 @@ function SingleElimView({ vm, progress, pKey }) {
     }
 
     if (JSON.stringify(progress.sig || {}) !== JSON.stringify(nextSig)) changed = true;
-    if (changed) saveProgress({ scores: nextScores, sig: nextSig }, pKey);
-  }, [se, pKey, progress, matchByWinner]);
+    if (changed) saveProgress({ scores: nextScores, sig: nextSig });
+  }, [se, progress, matchByWinner, saveProgress]);
 
   function onScoreChange(matchId, teamId, rawValue) {
     const cleaned = rawValue === "" ? "" : rawValue.replace(/[^\d]/g, "");
     const p = safeClone(progress);
     if (!p.scores[matchId]) p.scores[matchId] = {};
     p.scores[matchId][teamId] = cleaned;
-    saveProgress(p, pKey);
+    saveProgress(p);
   }
 
   const championName = resolveTeamName(se.rounds[se.rounds.length - 1].championFrom);
@@ -469,7 +529,7 @@ function layoutDoubleElim(de, finalCount = 1) {
   return { winners, losers, finals, totalColumns, championColumn, finalsGridRows };
 }
 
-function DoubleElimView({ vm, progress, pKey }) {
+function DoubleElimView({ vm, progress, saveProgress }) {
   const { de } = vm;
   const resolver = useMemo(() => buildDoubleResolver(de, progress), [de, progress]);
   const grandFinal = de.finals[0]?.matches?.[0] ?? null;
@@ -507,15 +567,15 @@ function DoubleElimView({ vm, progress, pKey }) {
     }
 
     if (JSON.stringify(progress.sig || {}) !== JSON.stringify(nextSig)) changed = true;
-    if (changed) saveProgress({ scores: nextScores, sig: nextSig }, pKey);
-  }, [de, resolver, progress, pKey]);
+    if (changed) saveProgress({ scores: nextScores, sig: nextSig });
+  }, [de, resolver, progress, saveProgress]);
 
   function onScoreChange(matchId, slotId, rawValue) {
     const cleaned = rawValue === "" ? "" : rawValue.replace(/[^\d]/g, "");
     const p = safeClone(progress);
     if (!p.scores[matchId]) p.scores[matchId] = {};
     p.scores[matchId][slotId] = cleaned;
-    saveProgress(p, pKey);
+    saveProgress(p);
   }
 
   const championMatch = resetTriggered && resetFinal ? resetFinal : grandFinal;
@@ -616,7 +676,7 @@ function DoubleElimView({ vm, progress, pKey }) {
   );
 }
 
-function RoundRobinView({ vm, progress, pKey }) {
+function RoundRobinView({ vm, progress, saveProgress }) {
   const { teamById, rounds, teamIds } = vm.rr;
 
   function getScore(matchId, teamId) {
@@ -629,7 +689,7 @@ function RoundRobinView({ vm, progress, pKey }) {
     const p = safeClone(progress);
     if (!p.scores[matchId]) p.scores[matchId] = {};
     p.scores[matchId][teamId] = cleaned;
-    saveProgress(p, pKey);
+    saveProgress(p);
   }
 
   const standings = useMemo(() => {

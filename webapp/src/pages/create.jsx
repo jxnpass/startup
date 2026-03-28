@@ -3,13 +3,8 @@ import { useNavigate } from "react-router-dom";
 import "../styles/create.css";
 
 import { normalizeDraft } from "../utils/bracketStructure.js";
-import {
-  addBracketToLibrary,
-  draftKeyFor,
-  progressKeyFor,
-  generateBracketId,
-} from "../utils/bracketLibrary.js";
-import { saveProgress } from "../utils/bracketProgress.js";
+import { cacheBracketRecord, generateBracketId } from "../utils/bracketLibrary.js";
+import { createBracket } from "../utils/bracketApi.js";
 
 function parseEmails(raw) {
   return raw
@@ -36,6 +31,8 @@ export default function Create() {
   const [copyMessage, setCopyMessage] = useState("");
   const [doubleElimResetFinal, setDoubleElimResetFinal] = useState(true);
   const [pendingBracketId] = useState(() => generateBracketId());
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setTeamNames((prev) => {
@@ -82,41 +79,40 @@ export default function Create() {
       <h1>Create a Bracket</h1>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
+          setSubmitError("");
+          setSubmitting(true);
 
-          const draft = normalizeDraft({
-            bracketName,
-            bracketDesc,
-            type,
-            teamCount,
-            teamNames,
-            mode,
-            roundCount,
-            sharing: {
-              editAccess,
-              viewAccess,
-              collaboratorEmails: parseEmails(collaboratorEmails),
-              shareLink,
-            },
-            doubleElimResetFinal,
-          });
+          try {
+            const draft = normalizeDraft({
+              bracketName,
+              bracketDesc,
+              type,
+              teamCount,
+              teamNames,
+              mode,
+              roundCount,
+              sharing: {
+                editAccess,
+                viewAccess,
+                collaboratorEmails: parseEmails(collaboratorEmails),
+                shareLink,
+              },
+              doubleElimResetFinal,
+            });
 
-          const id = pendingBracketId;
-          localStorage.setItem(draftKeyFor(id), JSON.stringify(draft));
-          saveProgress({ scores: {}, sig: {} }, progressKeyFor(id));
-
-          addBracketToLibrary({
-            id,
-            createdAt: new Date().toISOString(),
-            bracketName: draft.bracketName,
-            teamCount: draft.teamCount,
-            type: draft.type,
-            mode: draft.mode,
-            sharing: draft.sharing,
-          });
-
-          navigate(`/bracket/${id}`);
+            const id = pendingBracketId;
+            const createdAt = new Date().toISOString();
+            const progress = { scores: {}, sig: {} };
+            const { bracket } = await createBracket({ id, createdAt, draft, progress });
+            cacheBracketRecord(bracket);
+            navigate(`/bracket/${id}`);
+          } catch (error) {
+            setSubmitError(error.message || 'Could not create bracket.');
+          } finally {
+            setSubmitting(false);
+          }
         }}
       >
         <ul>
@@ -365,7 +361,8 @@ export default function Create() {
           )}
         </ul>
 
-        <button type="submit">Create</button>
+        <button type="submit" disabled={submitting}>{submitting ? "Creating..." : "Create"}</button>
+        {submitError ? <p className="login-message">{submitError}</p> : null}
       </form>
     </div>
   );

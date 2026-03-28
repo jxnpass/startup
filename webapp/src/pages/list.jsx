@@ -1,15 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/list.css";
 
 import {
   loadBracketLibrary,
-  removeBracketFromLibrary,
+  clearBracketCache,
+  cacheBracketList,
   draftKeyFor,
   progressKeyFor,
 } from "../utils/bracketLibrary.js";
 
 import { buildBracketViewModel } from "../utils/bracketStructure.js";
+import { deleteBracket, listBrackets } from "../utils/bracketApi.js";
 
 function readDraft(id) {
   const raw = localStorage.getItem(draftKeyFor(id));
@@ -163,6 +165,33 @@ export default function List() {
   const navigate = useNavigate();
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [tick, setTick] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await listBrackets();
+        if (ignore) return;
+        cacheBracketList(data.brackets || []);
+        setTick((x) => x + 1);
+      } catch (err) {
+        if (ignore) return;
+        setError(err.message || "Could not load brackets.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const library = useMemo(() => loadBracketLibrary(), [tick]);
 
@@ -194,18 +223,27 @@ export default function List() {
     });
   }, [library]);
 
-  function doDelete(id) {
-    removeBracketFromLibrary(id);
-    localStorage.removeItem(draftKeyFor(id));
-    localStorage.removeItem(progressKeyFor(id));
-    setConfirmDeleteId(null);
-    setTick((x) => x + 1);
+  async function doDelete(id) {
+    try {
+      await deleteBracket(id);
+      clearBracketCache(id);
+      setConfirmDeleteId(null);
+      setTick((x) => x + 1);
+    } catch (error) {
+      setError(error.message || "Could not delete bracket.");
+      setConfirmDeleteId(null);
+    }
+  }
+
+  if (loading) {
+    return <div className="page page-list"><h1>My Brackets</h1><p>Loading...</p>{error ? <p>{error}</p> : null}</div>;
   }
 
   if (rows.length === 0) {
     return (
       <div className="page page-list">
         <h1>My Brackets</h1>
+      {error ? <p>{error}</p> : null}
 
         <div className="empty-state">
           <p>You don’t have any brackets yet.</p>
@@ -220,6 +258,7 @@ export default function List() {
   return (
     <div className="page page-list">
       <h1>My Brackets</h1>
+      {error ? <p>{error}</p> : null}
 
       <table>
         <thead>
