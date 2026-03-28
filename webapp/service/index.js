@@ -1,49 +1,29 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const {
+  connectToDatabase,
+  getUserByEmail,
+  getUserById,
+  createUser,
+  createSession,
+  getSessionByToken,
+  deleteSessionByToken,
+  saveBracket,
+  getBracketById,
+  listBracketsByOwner,
+  deleteBracket,
+} = require('./database');
 
 const app = express();
 const port = process.argv.length > 2 ? Number(process.argv[2]) : 4000;
 const authCookieName = 'token';
-const dataDir = path.join(__dirname, 'data');
-const dataFile = path.join(dataDir, 'users.json');
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(express.static('public'));
-
-function ensureDataStore() {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-
-  if (!fs.existsSync(dataFile)) {
-    fs.writeFileSync(dataFile, JSON.stringify({ users: [], sessions: [] }, null, 2));
-  }
-}
-
-function readData() {
-  ensureDataStore();
-
-  try {
-    const raw = fs.readFileSync(dataFile, 'utf8');
-    const parsed = JSON.parse(raw);
-    return {
-      users: Array.isArray(parsed.users) ? parsed.users : [],
-      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
-    };
-  } catch {
-    return { users: [], sessions: [] };
-  }
-}
-
-function writeData(data) {
-  ensureDataStore();
-  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
-}
 
 function createId() {
   return crypto.randomUUID();
@@ -81,99 +61,136 @@ function clearAuthCookie(res) {
   });
 }
 
-function getAuthUser(req) {
+async function getAuthUser(req) {
   const token = req.cookies[authCookieName];
   if (!token) return null;
 
-  const data = readData();
-  const session = data.sessions.find((entry) => entry.token === token);
+  const session = await getSessionByToken(token);
   if (!session) return null;
 
-  return data.users.find((entry) => entry.id === session.userId) || null;
+  return getUserById(session.userId);
 }
 
-function authCookie(req, res, next) {
-  const user = getAuthUser(req);
-  if (!user) {
-    return res.status(401).send({ message: 'Unauthorized' });
-  }
+async function authCookie(req, res, next) {
+  try {
+    const user = await getAuthUser(req);
+    if (!user) {
+      return res.status(401).send({ message: 'Unauthorized' });
+    }
 
-  req.user = user;
-  next();
+    req.user = user;
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
-app.post('/api/auth/create', async (req, res) => {
-  const email = String(req.body?.email || '').trim().toLowerCase();
-  const password = String(req.body?.password || '');
-
-  if (!email || !password) {
-    return res.status(400).send({ message: 'Email and password are required.' });
-  }
-
-  if (password.length < 4) {
-    return res.status(400).send({ message: 'Password must be at least 4 characters.' });
-  }
-
-  const data = readData();
-  const existingUser = data.users.find((user) => user.email === email);
-  if (existingUser) {
-    return res.status(409).send({ message: 'User already exists.' });
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = {
-    id: createId(),
-    email,
-    username: getUsernameFromEmail(email),
-    passwordHash,
-    createdAt: new Date().toISOString(),
+function normalizeProgress(progress) {
+  return {
+    scores: progress?.scores && typeof progress.scores === 'object' ? progress.scores : {},
+    sig: progress?.sig && typeof progress.sig === 'object' ? progress.sig : {},
   };
+}
 
-  const token = createId();
-  data.users.push(user);
-  data.sessions = data.sessions.filter((entry) => entry.userId !== user.id);
-  data.sessions.push({ token, userId: user.id, createdAt: new Date().toISOString() });
-  writeData(data);
-  setAuthCookie(res, token);
+function normalizeBracketPayload(body, ownerId) {
+  const id = String(body?.id || '').trim();
+  const draft = body?.draft && typeof body.draft === 'object' ? body.draft : null;
+  const progress = normalizeProgress(body?.progress);
 
-  return res.status(201).send({ user: makeUserResponse(user) });
+  if (!id || !draft) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  return {
+    id,
+    ownerId,
+    draft,
+    progress,
+    sharing: draft?.sharing && typeof draft.sharing === 'object' ? draft.sharing : {},
+    bracketName: String(draft?.bracketName || 'Untitled Bracket'),
+    teamCount: Number(draft?.teamCount || 0),
+    type: String(draft?.type || 'single'),
+    mode: String(draft?.mode || ''),
+    createdAt: String(body?.createdAt || now),
+    updatedAt: now,
+  };
+}
+
+app.post('/api/auth/create', async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+
+    if (!email || !password) {
+      return res.status(400).send({ message: 'Email and password are required.' });
+    }
+
+    if (password.length < 4) {
+      return res.status(400).send({ message: 'Password must be at least 4 characters.' });
+    }
+
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).send({ message: 'User already exists.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = {
+      id: createId(),
+      email,
+      username: getUsernameFromEmail(email),
+      passwordHash,
+      createdAt: new Date().toISOString(),
+    };
+
+    const token = createId();
+    await createUser(user);
+    await createSession({ token, userId: user.id, createdAt: new Date().toISOString() });
+    setAuthCookie(res, token);
+
+    return res.status(201).send({ user: makeUserResponse(user) });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.post('/api/auth/login', async (req, res) => {
-  const email = String(req.body?.email || '').trim().toLowerCase();
-  const password = String(req.body?.password || '');
+app.post('/api/auth/login', async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
 
-  const data = readData();
-  const user = data.users.find((entry) => entry.email === email);
-  if (!user) {
-    return res.status(401).send({ message: 'Invalid email or password.' });
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(401).send({ message: 'Invalid email or password.' });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordMatches) {
+      return res.status(401).send({ message: 'Invalid email or password.' });
+    }
+
+    const token = createId();
+    await createSession({ token, userId: user.id, createdAt: new Date().toISOString() });
+    setAuthCookie(res, token);
+
+    return res.send({ user: makeUserResponse(user) });
+  } catch (error) {
+    next(error);
   }
-
-  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-  if (!passwordMatches) {
-    return res.status(401).send({ message: 'Invalid email or password.' });
-  }
-
-  const token = createId();
-  data.sessions = data.sessions.filter((entry) => entry.userId !== user.id);
-  data.sessions.push({ token, userId: user.id, createdAt: new Date().toISOString() });
-  writeData(data);
-  setAuthCookie(res, token);
-
-  return res.send({ user: makeUserResponse(user) });
 });
 
-app.delete('/api/auth/logout', (req, res) => {
-  const token = req.cookies[authCookieName];
-
-  if (token) {
-    const data = readData();
-    data.sessions = data.sessions.filter((entry) => entry.token !== token);
-    writeData(data);
+app.delete('/api/auth/logout', async (req, res, next) => {
+  try {
+    const token = req.cookies[authCookieName];
+    if (token) {
+      await deleteSessionByToken(token);
+    }
+    clearAuthCookie(res);
+    return res.send({ message: 'Logged out.' });
+  } catch (error) {
+    next(error);
   }
-
-  clearAuthCookie(res);
-  return res.send({ message: 'Logged out.' });
 });
 
 app.get('/api/auth/me', authCookie, (req, res) => {
@@ -187,20 +204,108 @@ app.get('/api/protected', authCookie, (req, res) => {
   });
 });
 
-function decodeXmlEntities(value) {
-  return String(value || '')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&amp;/g, '&');
-}
+app.get('/api/brackets', authCookie, async (req, res, next) => {
+  try {
+    const brackets = await listBracketsByOwner(req.user.id);
+    return res.send({
+      brackets: brackets.map((b) => ({
+        id: b.id,
+        ownerId: b.ownerId,
+        draft: b.draft,
+        progress: normalizeProgress(b.progress),
+        bracketName: b.bracketName,
+        teamCount: b.teamCount,
+        type: b.type,
+        mode: b.mode,
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
-function getXmlTagValue(xml, tagName) {
-  const match = String(xml || '').match(new RegExp(`<${tagName}>([\s\S]*?)<\/${tagName}>`, 'i'));
-  return decodeXmlEntities(match?.[1] || '').trim();
-}
+app.post('/api/brackets', authCookie, async (req, res, next) => {
+  try {
+    const bracket = normalizeBracketPayload(req.body, req.user.id);
+    if (!bracket) {
+      return res.status(400).send({ message: 'Bracket id and draft are required.' });
+    }
+
+    const existing = await getBracketById(bracket.id);
+    if (existing && existing.ownerId !== req.user.id) {
+      return res.status(403).send({ message: 'You do not have access to this bracket.' });
+    }
+    if (existing && existing.ownerId === req.user.id) {
+      return res.status(409).send({ message: 'Bracket already exists.' });
+    }
+
+    await saveBracket(bracket);
+    return res.status(201).send({ bracket });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/brackets/:id', authCookie, async (req, res, next) => {
+  try {
+    const bracket = await getBracketById(req.params.id);
+    if (!bracket) {
+      return res.status(404).send({ message: 'Bracket not found.' });
+    }
+    if (bracket.ownerId !== req.user.id) {
+      return res.status(403).send({ message: 'You do not have access to this bracket.' });
+    }
+    return res.send({ bracket: { ...bracket, progress: normalizeProgress(bracket.progress) } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put('/api/brackets/:id', authCookie, async (req, res, next) => {
+  try {
+    const existing = await getBracketById(req.params.id);
+    if (!existing) {
+      return res.status(404).send({ message: 'Bracket not found.' });
+    }
+    if (existing.ownerId !== req.user.id) {
+      return res.status(403).send({ message: 'You do not have access to this bracket.' });
+    }
+
+    const draft = req.body?.draft && typeof req.body.draft === 'object' ? req.body.draft : existing.draft;
+    const progress = req.body?.progress ? normalizeProgress(req.body.progress) : normalizeProgress(existing.progress);
+
+    const updated = {
+      ...existing,
+      draft,
+      progress,
+      sharing: draft?.sharing && typeof draft.sharing === 'object' ? draft.sharing : existing.sharing,
+      bracketName: String(draft?.bracketName || existing.bracketName || 'Untitled Bracket'),
+      teamCount: Number(draft?.teamCount || existing.teamCount || 0),
+      type: String(draft?.type || existing.type || 'single'),
+      mode: String(draft?.mode || existing.mode || ''),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await saveBracket(updated);
+    return res.send({ bracket: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete('/api/brackets/:id', authCookie, async (req, res, next) => {
+  try {
+    const result = await deleteBracket(req.params.id, req.user.id);
+    if (!result.deletedCount) {
+      return res.status(404).send({ message: 'Bracket not found.' });
+    }
+    return res.send({ message: 'Bracket deleted.' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.get('/api/health', (_req, res) => {
   return res.send({ ok: true });
@@ -210,11 +315,25 @@ app.get(/^\/api\/.*/, (_req, res) => {
   return res.status(404).send({ message: 'Not found' });
 });
 
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  return res.status(500).send({
+    message: err?.message || 'Internal server error.',
+  });
+});
+
 app.get(/^(?!\/api).*/, (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-ensureDataStore();
-app.listen(port, () => {
-  console.log(`Service listening on port ${port}`);
+async function start() {
+  await connectToDatabase();
+  app.listen(port, () => {
+    console.log(`Service listening on port ${port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error('Failed to start service:', error.message);
+  process.exit(1);
 });
