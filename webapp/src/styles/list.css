@@ -14,7 +14,7 @@
   width: 100%;
   border-collapse: collapse;
   background-color: #ffffff;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
@@ -36,6 +36,7 @@
   padding: 0.7rem 0.8rem;
   font-size: 0.9rem;
   color: #333;
+  vertical-align: middle;
 }
 
 .page-list tbody tr {
@@ -50,9 +51,9 @@
 .page-list td a,
 .page-list .link-btn {
   display: inline-block;
-  padding: 0.3rem 0.6rem;
+  padding: 0.45rem 0.75rem;
   font-size: 0.85rem;
-  border-radius: 4px;
+  border-radius: 8px;
   text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
   color: #2a2a94;
@@ -67,24 +68,24 @@
   color: #ffffff;
 }
 
-/* Status colors */
 .status-finished {
   color: #1b8f3a;
   font-weight: 700;
 }
+
 .status-notstarted {
   color: #b32020;
   font-weight: 700;
 }
+
 .status-progress {
   color: #c59b00;
   font-weight: 700;
 }
 
-/* Empty state */
 .empty-state {
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   text-align: center;
@@ -95,15 +96,15 @@
   background: #2a2a94;
   color: #F8F8FF;
   border: 1px solid #2a2a94;
-  padding: 0.6rem 1rem;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
   cursor: pointer;
 }
+
 .primary-btn:hover {
   filter: brightness(1.05);
 }
 
-/* ✅ Confirm modal (names avoid Bootstrap .modal conflict) */
 .confirm-backdrop {
   position: fixed;
   inset: 0;
@@ -119,7 +120,7 @@
   width: 100%;
   max-width: 420px;
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 1.25rem;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   text-align: center;
@@ -141,9 +142,10 @@
   color: #ffffff;
   border: 1px solid #b32020;
   padding: 0.55rem 0.9rem;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
+
 .danger-btn:hover {
   filter: brightness(1.05);
 }
@@ -153,10 +155,85 @@
   color: #2a2a94;
   border: 1px solid #2a2a94;
   padding: 0.55rem 0.9rem;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
+
 .secondary-btn:hover {
   background: #2a2a94;
   color: #ffffff;
+}
+
+@media (max-width: 820px) {
+  .page-list table,
+  .page-list thead,
+  .page-list tbody,
+  .page-list tr,
+  .page-list th,
+  .page-list td {
+    display: block;
+    width: 100%;
+  }
+
+  .page-list thead {
+    display: none;
+  }
+
+  .page-list table {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .page-list tbody {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .page-list tbody tr {
+    background: #ffffff;
+    border: 1px solid #d7defb;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 0.35rem 0;
+  }
+
+  .page-list td {
+    border: none;
+    padding: 0.65rem 0.9rem;
+    display: grid;
+    grid-template-columns: minmax(110px, 140px) 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    word-break: break-word;
+  }
+
+  .page-list td::before {
+    font-weight: 700;
+    color: #2a2a94;
+    content: "";
+  }
+
+  .page-list td:nth-child(1)::before { content: "ID"; }
+  .page-list td:nth-child(2)::before { content: "Name"; }
+  .page-list td:nth-child(3)::before { content: "Teams"; }
+  .page-list td:nth-child(4)::before { content: "Type"; }
+  .page-list td:nth-child(5)::before { content: "Status"; }
+  .page-list td:nth-child(6)::before { content: "Open"; }
+  .page-list td:nth-child(7)::before { content: "Delete"; }
+}
+
+@media (max-width: 480px) {
+  .page-list td {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .confirm-actions {
+    flex-direction: column;
+  }
+
+  .danger-btn,
+  .secondary-btn {
+    width: 100%;
+  }
 }

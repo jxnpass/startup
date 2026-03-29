@@ -2,21 +2,18 @@
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-
-  /* similar “centered page” behavior to login */
   min-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   gap: 2rem;
   padding: 2rem 1rem;
 }
 
 .about-text {
   font-size: 1.05rem;
-  line-height: 1.6;
+  line-height: 1.7;
   color: #000;
   text-align: center;
   max-width: 750px;
@@ -26,9 +23,9 @@
 .about-row {
   width: 100%;
   align-items: center;
+  row-gap: 1.5rem;
 }
 
-/* Profile Image */
 .picture-box {
   display: flex;
   justify-content: center;
@@ -45,7 +42,6 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* Quote */
 #quote {
   font-family: "Playfair Display", serif;
   font-style: italic;
@@ -74,4 +70,36 @@
   margin-top: 0.5rem;
   font-size: 0.9rem;
   opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .page-about {
+    min-height: auto;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    padding: 1rem 0.25rem 2rem;
+  }
+
+  .about-text {
+    font-size: 1rem;
+  }
+
+  #quote {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .picture-box img {
+    width: 140px;
+    height: 140px;
+  }
+
+  #quote {
+    padding: 1rem;
+  }
+
+  #quote div:first-child {
+    font-size: 1.05rem;
+  }
 }
