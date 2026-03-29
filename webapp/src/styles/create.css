@@ -19,8 +19,8 @@
   flex-direction: column;
   gap: 1.5rem;
   background-color: #ffffff;
-  padding: 1rem;
-  border-radius: 10px;
+  padding: 1.25rem;
+  border-radius: 14px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 700px;
@@ -58,9 +58,9 @@
 .page-create form input[type="datetime-local"],
 .page-create form textarea,
 .page-create form select {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 0.85rem;
   font-size: 1rem;
-  border-radius: 6px;
+  border-radius: 10px;
   border: 1px solid #4169E1;
   outline: none;
   width: 100%;
@@ -76,7 +76,7 @@
 }
 
 .page-create form textarea {
-  min-height: 80px;
+  min-height: 96px;
   resize: vertical;
 }
 
@@ -95,10 +95,10 @@
 }
 
 .page-create .button-group label {
-  padding: 0.5rem 1rem;
+  padding: 0.65rem 1rem;
   background-color: #F0F0FF;
   border: 1px solid #4169E1;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
   user-select: none;
@@ -120,13 +120,13 @@
 }
 
 .page-create button[type="submit"] {
-  padding: 0.8rem 1.2rem;
+  padding: 0.85rem 1.2rem;
   background-color: #2a2a94;
   color: #F8F8FF;
   font-size: 1rem;
   font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   align-self: center;
   transition: background-color 0.2s ease, transform 0.1s ease;
@@ -141,30 +141,6 @@
   transform: translateY(0);
 }
 
-@media (max-width: 700px) {
-  .page-create form {
-    padding: 1rem;
-  }
-
-  .page-create button[type="submit"] {
-    width: 100%;
-    text-align: center;
-  }
-}
-
-@media (max-width: 500px) {
-  .page-create .button-group {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .page-create fieldset {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-}
-
-
 .page-create .share-link-row {
   display: flex;
   gap: 0.75rem;
@@ -176,11 +152,11 @@
 }
 
 .page-create .secondary-action-btn {
-  padding: 0.7rem 1rem;
+  padding: 0.8rem 1rem;
   background-color: #f0f0ff;
   color: #2a2a94;
   border: 1px solid #4169E1;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   white-space: nowrap;
@@ -202,9 +178,40 @@
   font-weight: 600;
 }
 
+@media (max-width: 700px) {
+  .page-create h1 {
+    font-size: 1.7rem;
+    margin-bottom: 1rem;
+  }
+
+  .page-create form {
+    padding: 1rem;
+    gap: 1.1rem;
+  }
+
+  .page-create button[type="submit"] {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 @media (max-width: 500px) {
+  .page-create .button-group,
+  .page-create fieldset {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .page-create .button-group label {
+    width: 100%;
+  }
+
   .page-create .share-link-row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .page-create .secondary-action-btn {
+    width: 100%;
   }
 }
