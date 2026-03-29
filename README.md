@@ -121,8 +121,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [ ] **Stores data in MongoDB** - I did not complete this part of the deliverable.
-- [ ] **Stores credentials in MongoDB** - I did not complete this part of the deliverable.
+- [x] **Stores data in MongoDB** - I ensured that bracket information was stored on this server, so that users from any device and with the right authentication can access bracket info. 
+- [x] **Stores credentials in MongoDB** - Users and passwords are now stored (and encrypted) onto the server. 
 
 ## 🚀 WebSocket deliverable
 

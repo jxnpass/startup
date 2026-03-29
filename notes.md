@@ -70,3 +70,7 @@ This one was pretty straightforward, and was clear how to create a separate port
 
 Handling the API call was also fairly straightforward. I decided to make use of the "useless facts" API, simply because APIs tend to either require signing up for an API key, or are completely shutdown by the owners, so I went with a call that was low-risk and low-maintenance with an unlimited number of API calls allowed per month. 
 
+## DB
+
+This one just required edits from a local storage system to a hashed out database. In this case, the class requested I use MongoDB to integrate bracket information into a server, and it works perfectly since the way I set up the data info of each bracket was in the form of a json file! That made those changes very easy, just had to connect each add, update, delete, etc. to the server. 
+
