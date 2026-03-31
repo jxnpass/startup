@@ -16,6 +16,7 @@ const {
   listBracketsByOwner,
   deleteBracket,
 } = require('./database');
+const { getSharing, canViewBracket, canEditBracket, describeAccess } = require('./access');
 
 const app = express();
 const port = process.argv.length > 2 ? Number(process.argv[2]) : 4000;
@@ -257,10 +258,14 @@ app.get('/api/brackets/:id', authCookie, async (req, res, next) => {
     if (!bracket) {
       return res.status(404).send({ message: 'Bracket not found.' });
     }
-    if (bracket.ownerId !== req.user.id) {
+    if (!canViewBracket(req.user, bracket)) {
       return res.status(403).send({ message: 'You do not have access to this bracket.' });
     }
-    return res.send({ bracket: { ...bracket, progress: normalizeProgress(bracket.progress) } });
+
+    return res.send({
+      bracket: { ...bracket, progress: normalizeProgress(bracket.progress), sharing: getSharing(bracket) },
+      access: describeAccess(req.user, bracket),
+    });
   } catch (error) {
     next(error);
   }
@@ -272,11 +277,16 @@ app.put('/api/brackets/:id', authCookie, async (req, res, next) => {
     if (!existing) {
       return res.status(404).send({ message: 'Bracket not found.' });
     }
-    if (existing.ownerId !== req.user.id) {
-      return res.status(403).send({ message: 'You do not have access to this bracket.' });
+    if (!canEditBracket(req.user, existing)) {
+      return res.status(403).send({ message: 'You do not have access to edit this bracket.' });
     }
 
-    const draft = req.body?.draft && typeof req.body.draft === 'object' ? req.body.draft : existing.draft;
+    const isOwner = existing.ownerId === req.user.id;
+    if (!isOwner && req.body?.draft) {
+      return res.status(403).send({ message: 'Only the bracket owner can change bracket settings.' });
+    }
+
+    const draft = isOwner && req.body?.draft && typeof req.body.draft === 'object' ? req.body.draft : existing.draft;
     const progress = req.body?.progress ? normalizeProgress(req.body.progress) : normalizeProgress(existing.progress);
 
     const updated = {
@@ -292,7 +302,10 @@ app.put('/api/brackets/:id', authCookie, async (req, res, next) => {
     };
 
     await saveBracket(updated);
-    return res.send({ bracket: updated });
+    return res.send({
+      bracket: { ...updated, progress: normalizeProgress(updated.progress), sharing: getSharing(updated) },
+      access: describeAccess(req.user, updated),
+    });
   } catch (error) {
     next(error);
   }
