@@ -6,6 +6,7 @@ import { cacheBracketRecord, draftKeyFor, progressKeyFor } from "../utils/bracke
 import { buildBracketViewModel } from "../utils/bracketStructure.js";
 import { drawAllConnections, drawDataConnections } from "../utils/bracketLines.js";
 import { getBracket, normalizeProgress, updateBracket } from "../utils/bracketApi.js";
+import { connectSocket, joinBracket, sendUpdate } from "../utils/socket.js";
 
 function readDraft(id) {
   const raw = localStorage.getItem(draftKeyFor(id));
@@ -167,7 +168,14 @@ export default function Bracket() {
       ignore = true;
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [id]);
+    }, [id]);
+  
+    useEffect(() => {
+      if (!id) return;
+
+      connectSocket();
+      joinBracket(id);
+      }, [id]);
 
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
@@ -184,11 +192,14 @@ export default function Bracket() {
     saveTimerRef.current = window.setTimeout(async () => {
       try {
         await updateBracket(id, { progress: normalized });
+
+        // Broadcast the latest saved progress to other clients in the same bracket room
+        sendUpdate(id, normalized);
       } catch (err) {
         console.error('Failed to save bracket progress:', err);
         setError((current) => current || 'Progress could not be saved to MongoDB.');
       }
-    }, 250);
+    }, 250);  
   }
 
   useEffect(() => {
