@@ -64,6 +64,7 @@ export default function Create() {
 
   const needsPrivateEmails = editAccess === "private" || viewAccess === "private";
   const hasPublicAccess = editAccess === "public" || viewAccess === "public";
+  const canShareLink = needsPrivateEmails || hasPublicAccess;
   const shareLink = `${window.location.origin}/bracket/${pendingBracketId}`;
 
   async function copyShareLink() {
@@ -342,9 +343,9 @@ export default function Create() {
             </li>
           )}
 
-          {hasPublicAccess && (
+          {canShareLink && (
             <li>
-              <label htmlFor="publicShareLink">Public share link:</label>
+              <label htmlFor="publicShareLink">Bracket share link:</label>
               <div className="share-link-row">
                 <input
                   type="text"
@@ -357,7 +358,7 @@ export default function Create() {
                 </button>
               </div>
               <small className="sharing-help-text">
-                This preview link will work after the bracket is created.
+                Share this bracket link with collaborators or viewers after the bracket is created.
               </small>
               {copyMessage ? <div className="copy-message">{copyMessage}</div> : null}
             </li>

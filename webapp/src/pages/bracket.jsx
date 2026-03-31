@@ -46,6 +46,18 @@ function rawStable(obj) {
   return JSON.stringify(obj);
 }
 
+
+function formatEmailList(emails = []) {
+  if (!emails.length) return "No specific collaborators listed";
+  return emails.join(", ");
+}
+
+function formatAccessDescription(level, emails) {
+  if (level === "public") return "Anyone with access to the bracket link";
+  if (level === "private") return formatEmailList(emails);
+  return "Only you";
+}
+
 function buildDoubleResolver(de, progress) {
   const matchById = {};
   for (const section of [de.winners, de.losers, de.finals]) {
@@ -139,12 +151,25 @@ export default function Bracket() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [access, setAccess] = useState({ canView: true, canEdit: true, isOwner: false, isCollaborator: false, sharing: { editAccess: 'personal', viewAccess: 'personal', collaboratorEmails: [] } });
+  const [pendingRemoteProgress, setPendingRemoteProgress] = useState(null);
+  const [showRemoteNotice, setShowRemoteNotice] = useState(false);
   const saveTimerRef = useRef(null);
   const progressRef = useRef(progress);
 
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
+
+  useEffect(() => {
+    if (!pendingRemoteProgress) return;
+
+    const pendingStable = rawStable(normalizeProgress(pendingRemoteProgress));
+    const currentStable = rawStable(normalizeProgress(progress));
+    if (pendingStable === currentStable) {
+      setPendingRemoteProgress(null);
+      setShowRemoteNotice(false);
+    }
+  }, [pendingRemoteProgress, progress]);
 
   useEffect(() => {
     if (!id) return;
@@ -157,7 +182,11 @@ export default function Bracket() {
         const data = await getBracket(id);
         if (ignore) return;
         cacheBracketRecord(data.bracket);
-        setDraft(data.bracket?.draft || null);
+        setDraft(
+          data.bracket?.draft
+            ? { ...data.bracket.draft, ownerEmail: data.bracket.ownerEmail || "" }
+            : null
+        );
         setProgress(normalizeProgress(data.bracket?.progress));
         setAccess(data.access || { canView: true, canEdit: true, isOwner: false, isCollaborator: false, sharing: data.bracket?.sharing || { editAccess: 'personal', viewAccess: 'personal', collaboratorEmails: [] } });
       } catch (err) {
@@ -186,27 +215,26 @@ export default function Bracket() {
       }, [id]);
 
     useEffect(() => {
-      if (!id) return;
+    if (!id) return;
 
-      const removeHandler = addSocketMessageHandler((message) => {
-        if (!message || message.type !== "update") return;
-        if (message.bracketId !== id) return;
+    const removeHandler = addSocketMessageHandler((message) => {
+      if (!message || message.type !== "update") return;
+      if (message.bracketId !== id) return;
 
-        const incoming = normalizeProgress(message.update);
-        const incomingStable = rawStable(incoming);
-        const currentStable = rawStable(normalizeProgress(progressRef.current));
+      const incoming = normalizeProgress(message.update);
+      const incomingStable = rawStable(incoming);
+      const currentStable = rawStable(normalizeProgress(progressRef.current));
 
-        // Ignore duplicate payloads
-        if (incomingStable === currentStable) return;
+      if (incomingStable === currentStable) return;
 
-        setProgress(incoming);
-        localStorage.setItem(progressKeyFor(id), JSON.stringify(incoming));
-      });
+      setPendingRemoteProgress(incoming);
+      setShowRemoteNotice(true);
+    });
 
-      return () => {
-        removeHandler();
-      };
-    }, [id]);
+    return () => {
+      removeHandler();
+    };
+  }, [id]);
     
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
@@ -231,6 +259,20 @@ export default function Bracket() {
         setError((current) => current || 'Progress could not be saved to MongoDB.');
       }
     }, 250);  
+  }
+
+
+  function applyRemoteRefresh() {
+    if (!id || !pendingRemoteProgress) return;
+    const normalized = normalizeProgress(pendingRemoteProgress);
+    setProgress(normalized);
+    localStorage.setItem(progressKeyFor(id), JSON.stringify(normalized));
+    setPendingRemoteProgress(null);
+    setShowRemoteNotice(false);
+  }
+
+  function dismissRemoteNotice() {
+    setShowRemoteNotice(false);
   }
 
   useEffect(() => {
@@ -281,14 +323,35 @@ export default function Bracket() {
   }
 
   const { meta } = vm;
-  const shareSummary = `${access.sharing?.viewAccess || 'personal'} viewing • ${access.sharing?.editAccess || 'personal'} editing`;
+  const collaboratorEmails = access.sharing?.collaboratorEmails || [];
+  const viewerDetails = formatAccessDescription(access.sharing?.viewAccess || 'personal', collaboratorEmails);
+  const editorDetails = formatAccessDescription(access.sharing?.editAccess || 'personal', collaboratorEmails);
 
   return (
     <div className="page page-bracket">
       <div className="bracket-header">
-        <h1 className="bracket-title">{meta.bracketName}</h1>
+        <div className="bracket-title-row">
+          <h1 className="bracket-title">{meta.bracketName}</h1>
+          <div className="share-status" tabIndex="0" aria-label="Bracket sharing details">
+            <span className="share-status-dot" aria-hidden="true">i</span>
+            <div className="share-status-tooltip" role="tooltip">
+              <div><strong>Owner:</strong> {draft?.ownerEmail || draft?.owner || 'Unknown'}</div>
+              <div><strong>Viewing:</strong> {viewerDetails}</div>
+              <div><strong>Editing:</strong> {editorDetails}</div>
+              {!access.canEdit ? <div><strong>Your access:</strong> Read-only</div> : null}
+            </div>
+          </div>
+        </div>
         <p className="bracket-description">{meta.bracketDesc}</p>
-        <p className="bracket-description">Sharing: {shareSummary}{access.canEdit ? '' : ' • read-only for you'}</p>
+        {showRemoteNotice ? (
+          <div className="remote-update-toast" role="status" aria-live="polite">
+            <span>New score changes are available for this bracket.</span>
+            <div className="remote-update-actions">
+              <button type="button" className="remote-update-btn" onClick={applyRemoteRefresh}>Refresh bracket</button>
+              <button type="button" className="remote-update-dismiss" onClick={dismissRemoteNotice}>Dismiss</button>
+            </div>
+          </div>
+        ) : null}
         {error ? <p>{error}</p> : null}
       </div>
 

@@ -262,8 +262,15 @@ app.get('/api/brackets/:id', authCookie, async (req, res, next) => {
       return res.status(403).send({ message: 'You do not have access to this bracket.' });
     }
 
+    const owner = bracket.ownerId ? await getUserById(bracket.ownerId) : null;
+
     return res.send({
-      bracket: { ...bracket, progress: normalizeProgress(bracket.progress), sharing: getSharing(bracket) },
+      bracket: {
+        ...bracket,
+        progress: normalizeProgress(bracket.progress),
+        sharing: getSharing(bracket),
+        ownerEmail: owner?.email || '',
+      },
       access: describeAccess(req.user, bracket),
     });
   } catch (error) {

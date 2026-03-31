@@ -215,3 +215,8 @@
     width: 100%;
   }
 }
+
+
+.page-create .share-link-section-label {
+  display: block;
+}

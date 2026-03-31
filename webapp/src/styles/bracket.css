@@ -337,3 +337,132 @@
     display: none;
   }
 }
+
+
+.bracket-title-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.share-status {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.share-status-dot {
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 50%;
+  border: 1px solid #4169e1;
+  background: #f8f8ff;
+  color: #2a2a94;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.share-status-tooltip {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 78vw);
+  background: #ffffff;
+  color: #1f2559;
+  border: 1px solid rgba(65, 105, 225, 0.32);
+  border-radius: 12px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  padding: 0.8rem 0.95rem;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+  z-index: 20;
+}
+
+.share-status:hover .share-status-tooltip,
+.share-status:focus-within .share-status-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.share-status-tooltip div + div {
+  margin-top: 0.45rem;
+}
+
+.remote-update-toast {
+  margin: 1rem auto 0;
+  width: fit-content;
+  max-width: min(560px, 100%);
+  background: #f8f8ff;
+  border: 1px solid #4169e1;
+  color: #1f2559;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.remote-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.remote-update-btn,
+.remote-update-dismiss {
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remote-update-btn {
+  border: 1px solid #4169e1;
+  background: #4169e1;
+  color: #ffffff;
+}
+
+.remote-update-btn:hover {
+  background: #2a2a94;
+  border-color: #2a2a94;
+}
+
+.remote-update-dismiss {
+  border: 1px solid #4169e1;
+  background: transparent;
+  color: #2a2a94;
+}
+
+.remote-update-dismiss:hover {
+  background: #edf2ff;
+}
+
+@media (max-width: 640px) {
+  .share-status-tooltip {
+    left: auto;
+    right: 0;
+    transform: none;
+    width: min(320px, 88vw);
+  }
+
+  .remote-update-toast {
+    width: 100%;
+  }
+}
