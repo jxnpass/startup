@@ -21,6 +21,9 @@ const app = express();
 const port = process.argv.length > 2 ? Number(process.argv[2]) : 4000;
 const authCookieName = 'token';
 
+const http = require('http');
+const { peerProxy } = require('./peerProxy');
+
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 app.use(express.static('public'));
@@ -328,8 +331,6 @@ app.get(/^(?!\/api).*/, (_req, res) => {
 
 async function start() {
   await connectToDatabase();
-  const http = require('http');
-  const { peerProxy } = require('./peerProxy');
 
   const server = http.createServer(app);
 
