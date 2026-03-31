@@ -6,7 +6,7 @@ import { cacheBracketRecord, draftKeyFor, progressKeyFor } from "../utils/bracke
 import { buildBracketViewModel } from "../utils/bracketStructure.js";
 import { drawAllConnections, drawDataConnections } from "../utils/bracketLines.js";
 import { getBracket, normalizeProgress, updateBracket } from "../utils/bracketApi.js";
-import { connectSocket, joinBracket, sendUpdate } from "../utils/socket.js";
+import { connectSocket, joinBracket, sendUpdate, addSocketMessageHandler } from "../utils/socket.js";
 
 function readDraft(id) {
   const raw = localStorage.getItem(draftKeyFor(id));
@@ -139,6 +139,11 @@ export default function Bracket() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const saveTimerRef = useRef(null);
+  const progressRef = useRef(progress);
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
 
   useEffect(() => {
     if (!id) return;
@@ -177,6 +182,29 @@ export default function Bracket() {
       joinBracket(id);
       }, [id]);
 
+    useEffect(() => {
+      if (!id) return;
+
+      const removeHandler = addSocketMessageHandler((message) => {
+        if (!message || message.type !== "update") return;
+        if (message.bracketId !== id) return;
+
+        const incoming = normalizeProgress(message.update);
+        const incomingStable = rawStable(incoming);
+        const currentStable = rawStable(normalizeProgress(progressRef.current));
+
+        // Ignore duplicate payloads
+        if (incomingStable === currentStable) return;
+
+        setProgress(incoming);
+        localStorage.setItem(progressKeyFor(id), JSON.stringify(incoming));
+      });
+
+      return () => {
+        removeHandler();
+      };
+    }, [id]);
+    
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
   function persistProgress(nextProgress) {
