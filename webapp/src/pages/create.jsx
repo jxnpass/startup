@@ -6,6 +6,11 @@ import { normalizeDraft } from "../utils/bracketStructure.js";
 import { cacheBracketRecord, generateBracketId } from "../utils/bracketLibrary.js";
 import { createBracket } from "../utils/bracketApi.js";
 
+import { connectSocket, joinBracket } from '../utils/socket';
+
+connectSocket();
+joinBracket(bracket.id);
+
 function parseEmails(raw) {
   return raw
     .split(/[\n,;]+/)
