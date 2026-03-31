@@ -138,6 +138,7 @@ export default function Bracket() {
   const [progress, setProgress] = useState(() => safeParseProgress(id ? localStorage.getItem(progressKeyFor(id)) : null));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [access, setAccess] = useState({ canView: true, canEdit: true, isOwner: false, isCollaborator: false, sharing: { editAccess: 'personal', viewAccess: 'personal', collaboratorEmails: [] } });
   const saveTimerRef = useRef(null);
   const progressRef = useRef(progress);
 
@@ -158,11 +159,13 @@ export default function Bracket() {
         cacheBracketRecord(data.bracket);
         setDraft(data.bracket?.draft || null);
         setProgress(normalizeProgress(data.bracket?.progress));
+        setAccess(data.access || { canView: true, canEdit: true, isOwner: false, isCollaborator: false, sharing: data.bracket?.sharing || { editAccess: 'personal', viewAccess: 'personal', collaboratorEmails: [] } });
       } catch (err) {
         if (ignore) return;
         setError(err.message || 'Could not load bracket.');
         setDraft(readDraft(id));
         setProgress(safeParseProgress(localStorage.getItem(progressKeyFor(id))));
+        setAccess({ canView: false, canEdit: false, isOwner: false, isCollaborator: false, sharing: { editAccess: 'personal', viewAccess: 'personal', collaboratorEmails: [] } });
       } finally {
         if (!ignore) setLoading(false);
       }
@@ -208,7 +211,7 @@ export default function Bracket() {
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
   function persistProgress(nextProgress) {
-    if (!id) return;
+    if (!id || !access.canEdit) return;
     const normalized = normalizeProgress(nextProgress);
     setProgress(normalized);
     localStorage.setItem(progressKeyFor(id), JSON.stringify(normalized));
@@ -278,27 +281,29 @@ export default function Bracket() {
   }
 
   const { meta } = vm;
+  const shareSummary = `${access.sharing?.viewAccess || 'personal'} viewing • ${access.sharing?.editAccess || 'personal'} editing`;
 
   return (
     <div className="page page-bracket">
       <div className="bracket-header">
         <h1 className="bracket-title">{meta.bracketName}</h1>
         <p className="bracket-description">{meta.bracketDesc}</p>
+        <p className="bracket-description">Sharing: {shareSummary}{access.canEdit ? '' : ' • read-only for you'}</p>
         {error ? <p>{error}</p> : null}
       </div>
 
       {vm.kind === "roundrobin" ? (
-        <RoundRobinView vm={vm} progress={progress} saveProgress={persistProgress} />
+        <RoundRobinView vm={vm} progress={progress} saveProgress={persistProgress} canEdit={access.canEdit} />
       ) : vm.kind === "double" ? (
-        <DoubleElimView vm={vm} progress={progress} saveProgress={persistProgress} />
+        <DoubleElimView vm={vm} progress={progress} saveProgress={persistProgress} canEdit={access.canEdit} />
       ) : (
-        <SingleElimView vm={vm} progress={progress} saveProgress={persistProgress} />
+        <SingleElimView vm={vm} progress={progress} saveProgress={persistProgress} canEdit={access.canEdit} />
       )}
     </div>
   );
 }
 
-function SingleElimView({ vm, progress, saveProgress }) {
+function SingleElimView({ vm, progress, saveProgress, canEdit }) {
   const { se } = vm;
 
   const matchByWinner = useMemo(() => {
@@ -445,7 +450,7 @@ function SingleElimView({ vm, progress, saveProgress }) {
                     const aScore = getScore(m.matchId, A.id);
                     const bScore = getScore(m.matchId, B.id);
                     const winner = computeWinner(m).winnerTeamId;
-                    const disableScores = isByeName(aName) || isByeName(bName);
+                    const disableScores = !canEdit || isByeName(aName) || isByeName(bName);
 
                     return (
                       <div
@@ -568,7 +573,7 @@ function layoutDoubleElim(de, finalCount = 1) {
   return { winners, losers, finals, totalColumns, championColumn, finalsGridRows };
 }
 
-function DoubleElimView({ vm, progress, saveProgress }) {
+function DoubleElimView({ vm, progress, saveProgress, canEdit }) {
   const { de } = vm;
   const resolver = useMemo(() => buildDoubleResolver(de, progress), [de, progress]);
   const grandFinal = de.finals[0]?.matches?.[0] ?? null;
@@ -646,7 +651,7 @@ function DoubleElimView({ vm, progress, saveProgress }) {
             const aName = resolver.resolveName(A.source);
             const bName = resolver.resolveName(B.source);
             const winner = resolver.computeWinnerSlot(match);
-            const disableScores = isByeName(aName) || isByeName(bName);
+            const disableScores = !canEdit || isByeName(aName) || isByeName(bName);
 
             return (
               <div
@@ -715,7 +720,7 @@ function DoubleElimView({ vm, progress, saveProgress }) {
   );
 }
 
-function RoundRobinView({ vm, progress, saveProgress }) {
+function RoundRobinView({ vm, progress, saveProgress, canEdit }) {
   const { teamById, rounds, teamIds } = vm.rr;
 
   function getScore(matchId, teamId) {
@@ -793,6 +798,7 @@ function RoundRobinView({ vm, progress, saveProgress }) {
                       value={aScoreRaw}
                       onChange={(e) => onScoreChange(m.matchId, m.aId, e.target.value)}
                       inputMode="numeric"
+                      disabled={!canEdit}
                     />
                   </div>
                   <div className={"team " + (bWin ? "team-winner" : "")}>
@@ -801,6 +807,7 @@ function RoundRobinView({ vm, progress, saveProgress }) {
                       value={bScoreRaw}
                       onChange={(e) => onScoreChange(m.matchId, m.bId, e.target.value)}
                       inputMode="numeric"
+                      disabled={!canEdit}
                     />
                   </div>
                 </div>
