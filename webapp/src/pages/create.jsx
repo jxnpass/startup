@@ -5,11 +5,7 @@ import "../styles/create.css";
 import { normalizeDraft } from "../utils/bracketStructure.js";
 import { cacheBracketRecord, generateBracketId } from "../utils/bracketLibrary.js";
 import { createBracket } from "../utils/bracketApi.js";
-
-import { connectSocket, joinBracket } from '../utils/socket';
-
-connectSocket();
-joinBracket(bracket.id);
+import { connectSocket, joinBracket } from "../utils/socket.js";
 
 function parseEmails(raw) {
   return raw
@@ -112,6 +108,8 @@ export default function Create() {
             const progress = { scores: {}, sig: {} };
             const { bracket } = await createBracket({ id, createdAt, draft, progress });
             cacheBracketRecord(bracket);
+            connectSocket();
+            joinBracket(id);
             navigate(`/bracket/${id}`);
           } catch (error) {
             setSubmitError(error.message || 'Could not create bracket.');
