@@ -328,8 +328,15 @@ app.get(/^(?!\/api).*/, (_req, res) => {
 
 async function start() {
   await connectToDatabase();
-  app.listen(port, () => {
-    console.log(`Service listening on port ${port}`);
+  const http = require('http');
+  const { peerProxy } = require('./peerProxy');
+
+  const server = http.createServer(app);
+
+  peerProxy(server);
+
+  server.listen(port, () => {
+    console.log(`Listening on port ${port}`);
   });
 }
 
