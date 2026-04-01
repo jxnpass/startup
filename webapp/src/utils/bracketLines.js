@@ -85,14 +85,20 @@ function connectionPairsForSize(size) {
 
 function prepareSvg(svg, board) {
   const rect = board.getBoundingClientRect();
-  svg.setAttribute("width", rect.width);
-  svg.setAttribute("height", rect.height);
-  svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+  const width = Math.ceil(Math.max(rect.width, board.scrollWidth || 0));
+  const height = Math.ceil(Math.max(rect.height, board.scrollHeight || 0));
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = "";
   svg.style.position = "absolute";
   svg.style.left = "0";
   svg.style.top = "0";
+  svg.style.width = `${width}px`;
+  svg.style.height = `${height}px`;
   svg.style.pointerEvents = "none";
+  svg.style.overflow = "visible";
+  svg.style.zIndex = "1";
 }
 
 export function drawAllConnections(sizeHint = 0) {
@@ -132,8 +138,9 @@ export function drawDataConnections({ svgId, boardSelector, itemSelector = "[dat
       if (skipCrossLane) {
         const sourceLane = source.getAttribute("data-lane") || "";
         const sameLane = sourceLane && targetLane && sourceLane === targetLane;
+        const intoFinals = targetLane === "finals" && (sourceLane === "winners" || sourceLane === "losers" || sourceLane === "finals");
         const finalsToChampion = sourceLane === "finals" && targetLane === "champion";
-        if (!sameLane && !finalsToChampion) continue;
+        if (!sameLane && !intoFinals && !finalsToChampion) continue;
       }
 
       connect(svg, source, target);

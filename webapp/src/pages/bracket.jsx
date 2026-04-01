@@ -214,7 +214,7 @@ export default function Bracket() {
       joinBracket(id);
       }, [id]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!id) return;
 
     const removeHandler = addSocketMessageHandler((message) => {
@@ -234,8 +234,8 @@ export default function Bracket() {
     return () => {
       removeHandler();
     };
-  }, [id]);
-    
+  }, [id]);    
+  
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
   function persistProgress(nextProgress) {

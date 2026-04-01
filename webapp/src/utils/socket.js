@@ -79,6 +79,7 @@ export function sendUpdate(bracketId, update) {
     type: "update",
     bracketId,
     update,
+    sentAt: Date.now(),
   });
 
   if (activeSocket.readyState === WebSocket.OPEN) {
