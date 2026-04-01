@@ -126,10 +126,8 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 ## 🚀 WebSocket deliverable
 
-For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
-
-- [ ] **Backend listens for WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **Frontend makes WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **Data sent over WebSocket connection** - I did not complete this part of the deliverable.
-- [ ] **WebSocket data displayed** - I did not complete this part of the deliverable.
-- [ ] **Application is fully functional** - I did not complete this part of the deliverable.
+- [x] **Backend listens for WebSocket connection** - Websocket is successfully connected on bracket-id pages.
+- [x] **Frontend makes WebSocket connection** - Coded into bracket updates: each score update sends an update to other users that are sitting on the page that an update was made and a button is provided to refresh the page. 
+- [x] **Data sent over WebSocket connection** - See above: score updates are transferrable data. To see this live, use inspect > console to see updates live
+- [x] **WebSocket data displayed** - Data is displayed as a detected change.
+- [x] **Application is fully functional** 

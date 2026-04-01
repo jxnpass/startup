@@ -74,3 +74,7 @@ Handling the API call was also fairly straightforward. I decided to make use of 
 
 This one just required edits from a local storage system to a hashed out database. In this case, the class requested I use MongoDB to integrate bracket information into a server, and it works perfectly since the way I set up the data info of each bracket was in the form of a json file! That made those changes very easy, just had to connect each add, update, delete, etc. to the server. 
 
+## Websocket
+
+The content in making a websocket was really cool, and I can totally see how chat rooms can be made with this type of interactivity on a web app. After dealing with cross-user authentication (which now works), I utilized the web socket framework to detect individual changes within each of the scores/matches. Other users that are sitting on the page will then receive a pop-up recommending a refresh of the page to see the scores. This works for both editors and viewers. 
+
