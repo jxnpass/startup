@@ -32,26 +32,40 @@ function peerProxy(server) {
   const wss = new WebSocket.Server({ server });
   const connections = [];
 
-  wss.on('connection', async (ws, req) => {
-    const user = await resolveUser(req);
-    if (!user) {
-      ws.close(1008, 'Unauthorized');
-      return;
-    }
-
+  wss.on('connection', (ws, req) => {
     console.log('WebSocket connection established');
 
     const connection = {
       ws,
-      user,
+      user: null,
       bracketId: null,
     };
 
     connections.push(connection);
 
+    // Resolve auth once, then reuse it for all messages
+    const authReady = resolveUser(req);
+
     ws.on('message', async (message) => {
       try {
-        const data = JSON.parse(message);
+        const raw = message.toString();
+        console.log('Server received raw message:', raw);
+
+        const user = await authReady;
+        if (!user) {
+          ws.send(
+            JSON.stringify({
+              type: 'error',
+              message: 'Unauthorized',
+            })
+          );
+          ws.close(1008, 'Unauthorized');
+          return;
+        }
+
+        connection.user = user;
+
+        const data = JSON.parse(raw);
 
         switch (data.type) {
           case 'join': {
@@ -59,19 +73,25 @@ function peerProxy(server) {
             const bracket = await getBracketById(bracketId);
 
             if (!bracket || !canViewBracket(connection.user, bracket)) {
-              ws.send(JSON.stringify({
-                type: 'error',
-                message: 'You do not have access to view this bracket.',
-                bracketId,
-              }));
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  message: 'You do not have access to view this bracket.',
+                  bracketId,
+                })
+              );
               return;
             }
 
             connection.bracketId = bracketId;
-            ws.send(JSON.stringify({
-              type: 'joined',
-              bracketId,
-            }));
+
+            ws.send(
+              JSON.stringify({
+                type: 'joined',
+                bracketId,
+              })
+            );
+
             console.log(`Client joined bracket ${bracketId}`);
             break;
           }
@@ -81,11 +101,24 @@ function peerProxy(server) {
             const bracket = await getBracketById(bracketId);
 
             if (!bracket || !canEditBracket(connection.user, bracket)) {
-              ws.send(JSON.stringify({
-                type: 'error',
-                message: 'You do not have access to edit this bracket.',
-                bracketId,
-              }));
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  message: 'You do not have access to edit this bracket.',
+                  bracketId,
+                })
+              );
+              return;
+            }
+
+            if (connection.bracketId !== bracketId) {
+              ws.send(
+                JSON.stringify({
+                  type: 'error',
+                  message: 'Join the bracket room before sending updates.',
+                  bracketId,
+                })
+              );
               return;
             }
 
@@ -98,6 +131,8 @@ function peerProxy(server) {
                 c.ws.send(JSON.stringify(data));
               }
             });
+
+            console.log(`Broadcasted update for bracket ${bracketId}`);
             break;
           }
 

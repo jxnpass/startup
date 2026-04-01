@@ -1,6 +1,7 @@
 let socket = null;
-let currentBracketId = null;
 let messageHandlers = [];
+let joinedBracketIds = new Set();
+let pendingMessages = [];
 
 function getSocketUrl() {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -17,8 +18,36 @@ function notifyMessageHandlers(data) {
   }
 }
 
+function flushPendingMessages() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+  const stillPending = [];
+
+  for (const msg of pendingMessages) {
+    console.log("Flushing pending message:", msg);
+
+    if (msg.type === "join") {
+      socket.send(JSON.stringify(msg));
+    } else if (msg.type === "update") {
+      if (joinedBracketIds.has(msg.bracketId)) {
+        socket.send(JSON.stringify(msg));
+      } else {
+        stillPending.push(msg);
+      }
+    } else {
+      socket.send(JSON.stringify(msg));
+    }
+  }
+
+  pendingMessages = stillPending;
+}
+
 export function connectSocket() {
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+  if (
+    socket &&
+    (socket.readyState === WebSocket.OPEN ||
+      socket.readyState === WebSocket.CONNECTING)
+  ) {
     return socket;
   }
 
@@ -26,19 +55,12 @@ export function connectSocket() {
 
   socket.onopen = () => {
     console.log("WebSocket connected");
-
-    if (currentBracketId) {
-      socket.send(
-        JSON.stringify({
-          type: "join",
-          bracketId: currentBracketId,
-        })
-      );
-    }
+    flushPendingMessages();
   };
 
   socket.onclose = () => {
     console.log("WebSocket disconnected");
+    joinedBracketIds = new Set();
   };
 
   socket.onerror = (error) => {
@@ -49,6 +71,12 @@ export function connectSocket() {
     try {
       const data = JSON.parse(event.data);
       console.log("Received:", data);
+
+      if (data.type === "joined" && data.bracketId) {
+        joinedBracketIds.add(data.bracketId);
+        flushPendingMessages();
+      }
+
       notifyMessageHandlers(data);
     } catch (error) {
       console.error("Could not parse WebSocket message:", error);
@@ -59,39 +87,41 @@ export function connectSocket() {
 }
 
 export function joinBracket(bracketId) {
-  currentBracketId = bracketId;
-  const activeSocket = connectSocket();
+  connectSocket();
 
-  if (activeSocket.readyState === WebSocket.OPEN) {
-    activeSocket.send(
-      JSON.stringify({
-        type: "join",
-        bracketId,
-      })
-    );
+  const message = {
+    type: "join",
+    bracketId,
+  };
+
+  console.log("Sending join:", message);
+
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(message));
+  } else {
+    pendingMessages.push(message);
   }
 }
 
 export function sendUpdate(bracketId, update) {
-  const activeSocket = connectSocket();
+  connectSocket();
 
-  const payload = JSON.stringify({
+  const message = {
     type: "update",
     bracketId,
     update,
     sentAt: Date.now(),
-  });
+  };
 
-  if (activeSocket.readyState === WebSocket.OPEN) {
-    activeSocket.send(payload);
+  console.log("Sending update:", message);
+
+  if (
+    socket.readyState === WebSocket.OPEN &&
+    joinedBracketIds.has(bracketId)
+  ) {
+    socket.send(JSON.stringify(message));
   } else {
-    activeSocket.addEventListener(
-      "open",
-      () => {
-        activeSocket.send(payload);
-      },
-      { once: true }
-    );
+    pendingMessages.push(message);
   }
 }
 

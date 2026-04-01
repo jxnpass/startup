@@ -402,56 +402,67 @@
 }
 
 .remote-update-toast {
-  margin: 1rem auto 0;
-  width: fit-content;
-  max-width: min(560px, 100%);
-  background: #f8f8ff;
-  border: 1px solid #4169e1;
-  color: #1f2559;
-  border-radius: 14px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
-  padding: 0.85rem 1rem;
+  position: fixed;             
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;              
+
+  background: #ffffff;
+  border: 1px solid #d0d7ff;
+  border-left: 6px solid #4169E1;
+  border-radius: 10px;
+
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  max-width: 100%;
+  font-size: 1.1rem;
+
   display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 20px;
+
+  animation: slideInToast 1.0s ease-out;
+}
+
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .remote-update-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.remote-update-btn,
-.remote-update-dismiss {
-  border-radius: 999px;
-  padding: 0.55rem 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
+  display: fixed;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .remote-update-btn {
-  border: 1px solid #4169e1;
-  background: #4169e1;
-  color: #ffffff;
+  background: #4169E1;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .remote-update-btn:hover {
-  background: #2a2a94;
-  border-color: #2a2a94;
+  background: #2f52c7;
 }
 
 .remote-update-dismiss {
-  border: 1px solid #4169e1;
   background: transparent;
-  color: #2a2a94;
+  border: none;
+  color: #555;
+  cursor: pointer;
 }
 
 .remote-update-dismiss:hover {
-  background: #edf2ff;
+  text-decoration: underline;
 }
 
 /* Double-elimination layout */

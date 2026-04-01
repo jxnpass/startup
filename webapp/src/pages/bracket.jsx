@@ -207,12 +207,12 @@ export default function Bracket() {
     };
     }, [id]);
   
-    useEffect(() => {
-      if (!id) return;
+  useEffect(() => {
+    if (!id || loading) return;
 
-      connectSocket();
-      joinBracket(id);
-      }, [id]);
+    connectSocket();
+    joinBracket(id);
+  }, [id, loading]);
 
   useEffect(() => {
     if (!id) return;
@@ -235,7 +235,7 @@ export default function Bracket() {
       removeHandler();
     };
   }, [id]);    
-  
+
   const vm = useMemo(() => (draft ? buildBracketViewModel(draft) : null), [draft]);
 
   function persistProgress(nextProgress) {
@@ -345,7 +345,7 @@ export default function Bracket() {
         <p className="bracket-description">{meta.bracketDesc}</p>
         {showRemoteNotice ? (
           <div className="remote-update-toast" role="status" aria-live="polite">
-            <span>New score changes are available for this bracket.</span>
+            <span>⚠️ New score changes are available.</span>
             <div className="remote-update-actions">
               <button type="button" className="remote-update-btn" onClick={applyRemoteRefresh}>Refresh bracket</button>
               <button type="button" className="remote-update-dismiss" onClick={dismissRemoteNotice}>Dismiss</button>
